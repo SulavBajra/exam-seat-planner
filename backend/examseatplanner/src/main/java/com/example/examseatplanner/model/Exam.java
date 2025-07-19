@@ -8,7 +8,8 @@ import java.util.List;
 public class Exam {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    @Column(name = "exam_id")
+    private Integer id;
 
     @ManyToOne
     private Subject subject;
@@ -24,7 +25,7 @@ public class Exam {
     public Exam() {
     }
 
-    public Exam(Long id, List<Room> rooms, List<Student> students, String time, String date, Subject subject) {
+    public Exam(Integer id, List<Room> rooms, List<Student> students, String time, String date, Subject subject) {
         this.id = id;
         this.rooms = rooms;
         this.students = students;
@@ -33,11 +34,11 @@ public class Exam {
         this.subject = subject;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
