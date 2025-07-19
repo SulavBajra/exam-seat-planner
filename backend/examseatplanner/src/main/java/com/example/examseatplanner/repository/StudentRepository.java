@@ -17,4 +17,5 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     List<Student> findBySemester(int semester);
     Optional<Student> findByRoll(int roll);
     Optional<Student> findByStudentId(String studentId);
+    Boolean existsByStudentId(String studentId);
 }

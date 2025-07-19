@@ -1,14 +1,19 @@
 package com.example.examseatplanner.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 public class Program {
+
     @Id
     private Integer programCode;
 
     private String programName;
+
+    @OneToMany
+    @JoinColumn(name = "program_code", referencedColumnName = "programCode")
+    private List<Subject> subjects;
 
     public Program() {
     }
@@ -32,6 +37,14 @@ public class Program {
 
     public void setProgramName(String programName) {
         this.programName = programName;
+    }
+
+    public List<Subject> getSubjects() {
+        return subjects;
+    }
+
+    public void setSubjects(List<Subject> subjects) {
+        this.subjects = subjects;
     }
 
     @Override

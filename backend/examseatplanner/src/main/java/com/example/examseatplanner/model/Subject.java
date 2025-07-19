@@ -1,18 +1,21 @@
 package com.example.examseatplanner.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Subject {
+
     @Id
-    @Column(name="subject_code")
+    @Column(name = "subject_code")
     private Integer subjectCode;
 
     private String subjectName;
     private int duration;
     private String timeSlot;
+
+    @ManyToOne
+    @JoinColumn(name = "program_code")
+    private Program program;
 
     public Subject() {
     }
@@ -56,6 +59,14 @@ public class Subject {
         this.timeSlot = timeSlot;
     }
 
+    public Program getProgram() {
+        return program;
+    }
+
+    public void setProgram(Program program) {
+        this.program = program;
+    }
+
     @Override
     public String toString() {
         return "Subject{" +
@@ -63,6 +74,7 @@ public class Subject {
                 ", subjectName='" + subjectName + '\'' +
                 ", duration=" + duration +
                 ", timeSlot='" + timeSlot + '\'' +
+                ", program=" + (program != null ? program.getProgramName() : "null") +
                 '}';
     }
 }

@@ -18,6 +18,10 @@ public class StudentService {
         this.programRepository = programRepository;
     }
 
+    public boolean existsByStudentId(String studentId){
+        return studentRepository.existsByStudentId(studentId);
+    }
+
     public String generateStudentCode(String enrolledYear, int programCode, int roll) {
         return String.format("%04d%02d%02d", Integer.parseInt(enrolledYear), programCode, roll);
     }
