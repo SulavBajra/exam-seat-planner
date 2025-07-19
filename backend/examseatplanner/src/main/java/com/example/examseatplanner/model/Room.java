@@ -6,24 +6,24 @@ import jakarta.persistence.Id;
 @Entity
 public class Room {
     @Id
-    private Long roomNo;
+    private Integer roomNo;
 
     private int seatingCapacity;
     private int numRow;
     private int numColumn;
 
-    public Room(Long roomNo, int numColumn, int numRow, int seatingCapacity) {
+    public Room(Integer roomNo, int numColumn, int numRow, int seatingCapacity) {
         this.roomNo = roomNo;
         this.numColumn = numColumn;
         this.numRow = numRow;
         this.seatingCapacity = seatingCapacity;
     }
 
-    public Long getRoomNo() {
+    public Integer getRoomNo() {
         return roomNo;
     }
 
-    public void setRoomNo(Long roomNo) {
+    public void setRoomNo(Integer roomNo) {
         this.roomNo = roomNo;
     }
 
