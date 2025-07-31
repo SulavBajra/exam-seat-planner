@@ -1,4 +1,4 @@
-const Navigation = ({ activeTab, setActiveTab }) => {
+export const Navigation = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: Calendar },
     { id: "exams", label: "Exams", icon: Users },

@@ -34,6 +34,8 @@ public class ExamService {
         this.seatAllocationService =seatAllocationService;
     }
 
+
+
     // Add this method to ExamService
     public void validateExamSchedule(ExamRequestDTO dto) {
         // Check for room conflicts

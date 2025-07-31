@@ -1,4 +1,4 @@
-const Dashboard = () => {
+export const Dashboard = () => {
   const [stats, setStats] = useState({
     totalExams: 12,
     totalStudents: 450,

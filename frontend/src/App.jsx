@@ -1,5 +1,10 @@
 import { useState } from "react";
 import "./App.css";
+import Navigation from "./components/Navigation";
+import Dashboard from "./components/Dashboard";
+import ExamsManagement from "./components/ExamsManagement";
+import RoomsManagement from "./components/RoomsManagement";
+import StudentsManagement from "./components/StudentsManagement";
 
 // function App() {
 //   const [count, setCount] = useState(0);

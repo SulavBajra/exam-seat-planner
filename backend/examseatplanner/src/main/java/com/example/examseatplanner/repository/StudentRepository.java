@@ -1,5 +1,6 @@
 package com.example.examseatplanner.repository;
 
+import com.example.examseatplanner.dto.StudentResponseDTO;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,3 +20,4 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     Optional<Student> findByStudentId(String studentId);
     Boolean existsByStudentId(String studentId);
 }
+

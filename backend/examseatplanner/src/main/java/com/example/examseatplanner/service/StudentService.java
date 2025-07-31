@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class StudentService {
@@ -33,6 +34,37 @@ public class StudentService {
         this.studentRepository = studentRepository;
         this.subjectService = subjectService;
         this.programService = programService;
+    }
+
+    public Optional<StudentResponseDTO> findByStudentId(String studentId) {
+        return studentRepository.findByStudentId(studentId)
+                .map(student -> new StudentResponseDTO(
+                        student.getStudentId(),
+                        student.getEnrolledYear(),
+                        student.getSemester(),
+                        student.getRoll(),
+                        student.getProgram().getProgramName(),
+                        student.getSubjects().stream()
+                                .map(Subject::getSubjectName)
+                                .toList()
+                ));
+    }
+
+
+    public List<StudentResponseDTO> findAllStudents() {
+        List<Student> students = studentRepository.findAll();
+        return students.stream()
+                .map(student -> new StudentResponseDTO(
+                        student.getStudentId(),
+                        student.getEnrolledYear(),
+                        student.getSemester(),
+                        student.getRoll(),
+                        student.getProgram().getProgramName(),
+                        student.getSubjects().stream()
+                                .map(Subject::getSubjectName)
+                                .toList()
+                ))
+                .toList();
     }
 
     public boolean existsByStudentId(String studentId) {

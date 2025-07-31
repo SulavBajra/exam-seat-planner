@@ -1,4 +1,4 @@
-const RoomsManagement = () => {
+export const RoomsManagement = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
 

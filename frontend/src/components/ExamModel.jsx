@@ -1,4 +1,4 @@
-const CreateExamModal = ({ isOpen, onClose, onSubmit }) => {
+export const CreateExamModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     subjectCode: "",
     date: "",

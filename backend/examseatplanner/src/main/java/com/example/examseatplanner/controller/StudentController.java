@@ -9,6 +9,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/students")
 public class StudentController {
@@ -17,6 +20,16 @@ public class StudentController {
     @Autowired
     public StudentController(StudentService studentService){
         this.studentService = studentService;
+    }
+
+    @GetMapping
+    public List<StudentResponseDTO> getStudents(){
+        return studentService.findAllStudents();
+    }
+
+    @GetMapping("{studentId}")
+    public Optional<StudentResponseDTO> getStudentById(@PathVariable String studentId){
+        return studentService.findByStudentId(studentId);
     }
 
     @PostMapping("/auth/register")

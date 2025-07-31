@@ -1,4 +1,4 @@
-const ExamsManagement = () => {
+export const ExamsManagement = () => {
   const [exams, setExams] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
