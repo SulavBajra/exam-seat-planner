@@ -25,6 +25,22 @@ public class SeatAllocationService {
         this.seatAssignmentRepository = seatAssignmentRepository;
     }
 
+    public List<SeatAssignmentDTO> getSeatPlanByExamId(Integer examId) {
+        List<SeatAssignment> assignments = seatAssignmentRepository.findByExamId(examId);
+
+        return assignments.stream()
+                .map(sa -> new SeatAssignmentDTO(
+                        sa.getStudent().getStudentId(),
+                        sa.getRoom().getRoomNo(),
+                        sa.getRow(),
+                        sa.getColumn()
+                ))
+                .sorted(Comparator.comparing(SeatAssignmentDTO::roomNo)
+                        .thenComparing(SeatAssignmentDTO::row)
+                        .thenComparing(SeatAssignmentDTO::column))
+                .toList();
+    }
+
     public List<String> readStudentIdsFromExcel(String filePath) {
         List<String> studentIds = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(new File(filePath));
