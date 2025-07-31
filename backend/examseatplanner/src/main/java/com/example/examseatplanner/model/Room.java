@@ -12,6 +12,10 @@ public class Room {
     private int numRow;
     private int numColumn;
 
+    public Room(){
+
+    }
+
     public Room(Integer roomNo, int numColumn, int numRow, int seatingCapacity) {
         this.roomNo = roomNo;
         this.numColumn = numColumn;

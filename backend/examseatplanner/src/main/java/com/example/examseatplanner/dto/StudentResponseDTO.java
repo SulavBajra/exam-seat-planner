@@ -13,7 +13,7 @@ public record StudentResponseDTO(
         String programName,
         List<String> subjectNames
 ) {
-    public StudentResponseDTO mapToResponseDTO(Student student) {
+    public static StudentResponseDTO fromEntity(Student student) {
         return new StudentResponseDTO(
                 student.getStudentId(),
                 student.getEnrolledYear(),
