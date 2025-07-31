@@ -1,17 +1,44 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
-import { Button } from "./components/Button.jsx";
 
-function App() {
-  const [count, setCount] = useState(0);
+// function App() {
+//   const [count, setCount] = useState(0);
+
+//   return (
+//     <>
+//       <Button />
+//     </>
+//   );
+// }
+
+const ExamSeatPlannerApp = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return <Dashboard />;
+      case "exams":
+        return <ExamsManagement />;
+      case "rooms":
+        return <RoomsManagement />;
+      case "students":
+        return <StudentsManagement />;
+      case "reports":
+        return <Reports />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
   return (
-    <>
-      <Button />
-    </>
+    <div className="min-h-screen bg-gray-50">
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">{renderContent()}</div>
+      </main>
+    </div>
   );
-}
+};
 
-export default App;
+export default ExamSeatPlannerApp;
