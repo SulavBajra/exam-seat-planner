@@ -18,7 +18,7 @@ import StudentsManagement from "./components/StudentsManagement";
 
 const ExamSeatPlannerApp = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-
+  
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":

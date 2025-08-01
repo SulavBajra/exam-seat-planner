@@ -18,7 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentService {
@@ -77,11 +79,35 @@ public class StudentService {
 
     public StudentResponseDTO registerFromDTO(StudentRequestDTO dto) {
         Program program = programService.findByProgramName(dto.program())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program Not Found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program Not Found: " + dto.program()));
 
-        List<Subject> subjects = dto.subjects().stream()
-                .map(name -> subjectService.findBySubjectName(name)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Subject not found: " + name)))
+        List<String> subjectNames = dto.subjects().stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
+
+        // Lookup subjects
+        Map<String, Optional<Subject>> subjectMap = subjectNames.stream()
+                .collect(Collectors.toMap(
+                        name -> name,
+                        subjectService::findBySubjectName
+                ));
+
+        List<String> missingSubjects = subjectMap.entrySet().stream()
+                .filter(entry -> entry.getValue().isEmpty())
+                .map(Map.Entry::getKey)
+                .toList();
+
+        if (!missingSubjects.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Subjects not found: " + String.join(", ", missingSubjects)
+            );
+        }
+
+        List<Subject> subjects = subjectNames.stream()
+                .map(name -> subjectMap.get(name).get())
                 .toList();
 
         String studentId = generateStudentCode(dto.enrollYear(), program.getProgramCode(), dto.roll());
