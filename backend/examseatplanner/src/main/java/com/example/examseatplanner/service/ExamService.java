@@ -66,6 +66,60 @@ public class ExamService {
                             eligibleStudents.size(), totalCapacity));
         }
     }
+    // Add these methods to your ExamService class
+
+    public List<Exam> getExamsByDate(String date) {
+        LocalDate examDate = LocalDate.parse(date);
+        return examRepository.findByDate(examDate);
+    }
+
+    public ExamResponseDTO updateExam(Integer examId, ExamRequestDTO dto) {
+        // First validate the updated exam schedule
+        validateExamSchedule(dto);
+
+        // Find existing exam
+        Exam existingExam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found"));
+
+        // Update exam details
+        Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+
+        List<Room> rooms = roomRepository.findAllByRoomNoIn(dto.roomNumbers());
+        if (rooms.size() != dto.roomNumbers().size()) {
+            throw new RuntimeException("Some rooms not found");
+        }
+
+        existingExam.setSubject(subject);
+        existingExam.setDate(LocalDate.parse(dto.date()));
+        existingExam.setRooms(rooms);
+
+        Exam updatedExam = examRepository.save(existingExam);
+
+        // Re-allocate seats with updated information
+        List<Student> students = studentRepository
+                .findByProgramAndSemester(subject.getProgram(), subject.getSemester());
+        seatAllocationService.allocateSeats(updatedExam, students);
+
+        return ExamResponseDTO.fromEntity(updatedExam);
+    }
+
+    public void deleteExam(Integer examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found"));
+        examRepository.delete(exam);
+    }
+
+    public void allocateSeatsForExam(Integer examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found"));
+
+        // Get students for this exam
+        List<Student> students = getStudentsForExam(exam);
+
+        // Allocate seats
+        seatAllocationService.allocateSeats(exam, students);
+    }
 
     public ExamResponseDTO createExam(ExamRequestDTO dto) {
         // Validate exam schedule

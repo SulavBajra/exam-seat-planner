@@ -3,42 +3,71 @@ package com.example.examseatplanner.controller;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.model.Exam;
-import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.service.ExamService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/exams")
+@RequestMapping("/api/exams")
+@Validated
 public class ExamController {
 
     private final ExamService examService;
-    private final ExamRepository examRepository;
 
-    public ExamController(ExamService examService,ExamRepository examRepository){
+    public ExamController(ExamService examService) {
         this.examService = examService;
-        this.examRepository = examRepository;
     }
 
-    @GetMapping("/date")
-    public ResponseEntity<List<Exam>> getByExamDate(@RequestParam String date) {
-        final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MMM-dd");
-        final LocalDate dt = (LocalDate) dtf.parseBest(date);
-        List<Exam> exams = examRepository.findByDate(dt);
+    @GetMapping
+    public ResponseEntity<List<ExamResponseDTO>> getAllExams() {
+        List<ExamResponseDTO> exams = examService.getAllExams();
         return ResponseEntity.ok(exams);
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ExamResponseDTO> createExam(@Validated @RequestBody ExamRequestDTO examRequestDTO) {
-        return ResponseEntity.ok(examService.createExam(examRequestDTO));
+    @GetMapping("/{examId}")
+    public ResponseEntity<ExamResponseDTO> getExamById(@PathVariable Integer examId) {
+        ExamResponseDTO exam = examService.getExamById(examId);
+        return ResponseEntity.ok(exam);
     }
 
+    @GetMapping("/date/{date}")
+    public ResponseEntity<List<Exam>> getExamsByDate(
+            @PathVariable
+            @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "Date must be in format yyyy-MM-dd")
+            String date) {
+        List<Exam> exams = examService.getExamsByDate(date);
+        return ResponseEntity.ok(exams);
+    }
 
+    @PostMapping
+    public ResponseEntity<ExamResponseDTO> createExam(@Valid @RequestBody ExamRequestDTO examRequestDTO) {
+        ExamResponseDTO createdExam = examService.createExam(examRequestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdExam);
+    }
+
+    @PutMapping("/{examId}")
+    public ResponseEntity<ExamResponseDTO> updateExam(
+            @PathVariable Integer examId,
+            @Valid @RequestBody ExamRequestDTO examRequestDTO) {
+        ExamResponseDTO updatedExam = examService.updateExam(examId, examRequestDTO);
+        return ResponseEntity.ok(updatedExam);
+    }
+
+    @DeleteMapping("/{examId}")
+    public ResponseEntity<Void> deleteExam(@PathVariable Integer examId) {
+        examService.deleteExam(examId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{examId}/allocate-seats")
+    public ResponseEntity<String> allocateSeats(@PathVariable Integer examId) {
+        examService.allocateSeatsForExam(examId);
+        return ResponseEntity.ok("Seats allocated successfully for exam " + examId);
+    }
 }
