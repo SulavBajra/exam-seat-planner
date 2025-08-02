@@ -1,41 +1,45 @@
 package com.example.examseatplanner.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "seat_assignment")
 public class SeatAssignment {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "student_id")
     private Student student;
 
     @ManyToOne
+    @JoinColumn(name = "room_no")
     private Room room;
 
     private Integer seatNumber;
 
     @ManyToOne
+    @JoinColumn(name = "exam_id")  // This should reference exam_id
     private Exam exam;
 
-    private int row;
-    private int column;
+    @Column(name = "seat_row")  // Using seat_row to avoid reserved keyword
+    private int seatRow;
+
+    @Column(name = "seat_column")  // Using seat_column to avoid reserved keyword
+    private int seatColumn;
 
     public SeatAssignment() {
     }
 
-    public SeatAssignment(Integer id, int seatNumber, Room room, Student student,Exam exam,int row,int column) {
+    public SeatAssignment(Integer id, int seatNumber, Room room, Student student, Exam exam, int seatRow, int seatColumn) {
         this.id = id;
         this.seatNumber = seatNumber;
         this.room = room;
         this.student = student;
         this.exam = exam;
-        this.row = row;
-        this.column = column;
+        this.seatRow = seatRow;
+        this.seatColumn = seatColumn;
     }
 
     public Integer getId() {
@@ -62,11 +66,11 @@ public class SeatAssignment {
         this.room = room;
     }
 
-    public int getSeatNumber() {
+    public Integer getSeatNumber() {
         return seatNumber;
     }
 
-    public void setSeatNumber(int seatNumber) {
+    public void setSeatNumber(Integer seatNumber) {
         this.seatNumber = seatNumber;
     }
 
@@ -78,20 +82,35 @@ public class SeatAssignment {
         this.exam = exam;
     }
 
-    public int getRow() {
-        return row;
+    public int getRow() {  // Keep these methods for backward compatibility
+        return seatRow;
     }
 
     public void setRow(int row) {
-        this.row = row;
+        this.seatRow = row;
     }
 
     public int getColumn() {
-        return column;
+        return seatColumn;
     }
 
     public void setColumn(int column) {
-        this.column = column;
+        this.seatColumn = column;
+    }
+
+    public int getSeatRow() {
+        return seatRow;
+    }
+
+    public void setSeatRow(int seatRow) {
+        this.seatRow = seatRow;
+    }
+
+    public int getSeatColumn() {
+        return seatColumn;
+    }
+
+    public void setSeatColumn(int seatColumn) {
+        this.seatColumn = seatColumn;
     }
 }
-

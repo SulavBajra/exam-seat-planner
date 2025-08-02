@@ -1,10 +1,12 @@
 package com.example.examseatplanner.model;
 
 import jakarta.persistence.*;
-
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Entity
+@Table(name = "exam")
 public class Exam {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,26 +14,26 @@ public class Exam {
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "subject_code")
     private Subject subject;
-    private String date;
-    private String time;
+
+    @Column(name = "exam_date")
+    private LocalDate date;
 
     @ManyToMany
-    private List<Student> students;
-
-    @ManyToMany
+    @JoinTable(
+            name = "exam_rooms",
+            joinColumns = @JoinColumn(name = "exam_id"),
+            inverseJoinColumns = @JoinColumn(name = "room_no")
+    )
     private List<Room> rooms;
 
     public Exam() {
     }
 
-    public Exam(Integer id, List<Room> rooms, List<Student> students, String time, String date, Subject subject) {
-        this.id = id;
-        this.rooms = rooms;
-        this.students = students;
-        this.time = time;
-        this.date = date;
+    public Exam(Subject subject, LocalDate date) {
         this.subject = subject;
+        this.date = date;
     }
 
     public Integer getId() {
@@ -50,27 +52,11 @@ public class Exam {
         this.rooms = rooms;
     }
 
-    public List<Student> getStudents() {
-        return students;
-    }
-
-    public void setStudents(List<Student> students) {
-        this.students = students;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
-    }
-
-    public String getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
@@ -87,9 +73,7 @@ public class Exam {
         return "Exam{" +
                 "id=" + id +
                 ", subject=" + subject +
-                ", date='" + date + '\'' +
-                ", time='" + time + '\'' +
-                ", students=" + students +
+                ", date=" + date +
                 ", rooms=" + rooms +
                 '}';
     }

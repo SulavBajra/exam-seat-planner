@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -26,7 +29,9 @@ public class ExamController {
 
     @GetMapping("/date")
     public ResponseEntity<List<Exam>> getByExamDate(@RequestParam String date) {
-        List<Exam> exams = examRepository.findByDate(date);
+        final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MMM-dd");
+        final LocalDate dt = (LocalDate) dtf.parseBest(date);
+        List<Exam> exams = examRepository.findByDate(dt);
         return ResponseEntity.ok(exams);
     }
 

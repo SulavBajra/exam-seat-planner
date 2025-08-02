@@ -5,7 +5,9 @@ import com.example.examseatplanner.dto.StudentResponseDTO;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.model.Subject;
+import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.StudentRepository;
+import com.example.examseatplanner.repository.SubjectRepository;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -18,54 +20,33 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final SubjectService subjectService;
-    private final ProgramService programService;
+    private final ProgramRepository programRepository;
+    private final SubjectRepository subjectRepository;
 
     @Autowired
     public StudentService(StudentRepository studentRepository,
-                          SubjectService subjectService,
-                          ProgramService programService) {
+                          ProgramRepository programRepository,
+                          SubjectRepository subjectRepository) {
         this.studentRepository = studentRepository;
-        this.subjectService = subjectService;
-        this.programService = programService;
+        this.programRepository = programRepository;
+        this.subjectRepository = subjectRepository;
     }
 
     public Optional<StudentResponseDTO> findByStudentId(String studentId) {
         return studentRepository.findByStudentId(studentId)
-                .map(student -> new StudentResponseDTO(
-                        student.getStudentId(),
-                        student.getEnrolledYear(),
-                        student.getSemester(),
-                        student.getRoll(),
-                        student.getProgram().getProgramName(),
-                        student.getSubjects().stream()
-                                .map(Subject::getSubjectName)
-                                .toList()
-                ));
+                .map(StudentResponseDTO::fromEntity);
     }
-
 
     public List<StudentResponseDTO> findAllStudents() {
         List<Student> students = studentRepository.findAll();
         return students.stream()
-                .map(student -> new StudentResponseDTO(
-                        student.getStudentId(),
-                        student.getEnrolledYear(),
-                        student.getSemester(),
-                        student.getRoll(),
-                        student.getProgram().getProgramName(),
-                        student.getSubjects().stream()
-                                .map(Subject::getSubjectName)
-                                .toList()
-                ))
+                .map(StudentResponseDTO::fromEntity)
                 .toList();
     }
 
@@ -78,57 +59,21 @@ public class StudentService {
     }
 
     public StudentResponseDTO registerFromDTO(StudentRequestDTO dto) {
-        Program program = programService.findByProgramName(dto.program())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Program Not Found: " + dto.program()));
+        Program program = programRepository.findById(dto.programCode())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Program Not Found: " + dto.programCode()));
 
-        List<String> subjectNames = dto.subjects().stream()
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .distinct()
-                .toList();
-
-        // Lookup subjects
-        Map<String, Optional<Subject>> subjectMap = subjectNames.stream()
-                .collect(Collectors.toMap(
-                        name -> name,
-                        subjectService::findBySubjectName
-                ));
-
-        List<String> missingSubjects = subjectMap.entrySet().stream()
-                .filter(entry -> entry.getValue().isEmpty())
-                .map(Map.Entry::getKey)
-                .toList();
-
-        if (!missingSubjects.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Subjects not found: " + String.join(", ", missingSubjects)
-            );
-        }
-
-        List<Subject> subjects = subjectNames.stream()
-                .map(name -> subjectMap.get(name).get())
-                .toList();
-
-        String studentId = generateStudentCode(dto.enrollYear(), program.getProgramCode(), dto.roll());
+        String studentId = generateStudentCode(dto.enrolledYear(), program.getProgramCode(), dto.roll());
 
         if (existsByStudentId(studentId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Student with ID already exists");
         }
 
-        Student student = new Student(subjects, program, dto.enrollYear(), dto.semester(), dto.roll());
+        Student student = new Student(program, dto.enrolledYear(), dto.semester(), dto.roll());
         student.setStudentId(studentId);
 
         Student savedStudent = studentRepository.save(student);
-
-        return new StudentResponseDTO(
-                savedStudent.getStudentId(),
-                savedStudent.getEnrolledYear(),
-                savedStudent.getSemester(),
-                savedStudent.getRoll(),
-                savedStudent.getProgram().getProgramName(),
-                savedStudent.getSubjects().stream().map(Subject::getSubjectName).toList()
-        );
+        return StudentResponseDTO.fromEntity(savedStudent);
     }
 
     public void importFromExcel(MultipartFile file) {
@@ -142,15 +87,17 @@ public class StudentService {
                 String enrolledYear = row.getCell(1).getStringCellValue();
                 int semester = (int) row.getCell(2).getNumericCellValue();
                 int roll = (int) row.getCell(3).getNumericCellValue();
-                String programName = row.getCell(4).getStringCellValue();
+                int programCode = (int) row.getCell(4).getNumericCellValue();
 
-                // You may need to look up Program and Subject from DB by name
+                Program program = programRepository.findById(programCode)
+                        .orElseThrow(() -> new RuntimeException("Program not found: " + programCode));
+
                 Student student = new Student();
                 student.setStudentId(studentId);
                 student.setEnrolledYear(enrolledYear);
                 student.setSemester(semester);
                 student.setRoll(roll);
-                // student.setProgram(...) // lookup or create
+                student.setProgram(program);
 
                 studentRepository.save(student);
             }
@@ -160,4 +107,11 @@ public class StudentService {
         }
     }
 
+    // Helper method to get subjects for a student
+    public List<Subject> getSubjectsForStudent(Student student) {
+        return subjectRepository.findByProgramAndSemester(
+                student.getProgram(),
+                student.getSemester()
+        );
+    }
 }

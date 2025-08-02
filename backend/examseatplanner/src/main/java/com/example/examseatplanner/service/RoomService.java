@@ -7,6 +7,7 @@ import com.example.examseatplanner.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,14 +46,14 @@ public class RoomService {
         roomRepository.deleteById(roomNo);
     }
 
-    public List<Room> getAvailableRooms(String date, String time) {
+    public List<Room> getAvailableRooms(String dateStr) {
+        LocalDate date = LocalDate.parse(dateStr);
+
         // Get all rooms
         List<Room> allRooms = roomRepository.findAll();
 
-        // Get exams scheduled for the given date and time
-        List<Exam> scheduledExams = examRepository.findByDate(date).stream()
-                .filter(exam -> exam.getTime().equals(time))
-                .toList();
+        // Get exams scheduled for the given date
+        List<Exam> scheduledExams = examRepository.findByDate(date);
 
         // Get room numbers that are already booked
         Set<Integer> bookedRoomNos = scheduledExams.stream()

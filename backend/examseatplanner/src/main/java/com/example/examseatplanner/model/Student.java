@@ -2,8 +2,6 @@ package com.example.examseatplanner.model;
 
 import jakarta.persistence.*;
 
-import java.util.List;
-
 @Entity
 @Table(name = "student")
 public class Student {
@@ -19,18 +17,9 @@ public class Student {
     @JoinColumn(name="program_code")
     private Program program;
 
-    @ManyToMany
-    @JoinTable(
-            name = "student_subjects",
-            joinColumns = @JoinColumn(name = "student_student_id", referencedColumnName = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "subjects_subject_code", referencedColumnName = "subject_code")
-    )
-    private List<Subject> subjects;
-
     public Student() {}
 
-    public Student(List<Subject> subjects, Program program, String enrolledYear, int semester, int roll) {
-        this.subjects = subjects;
+    public Student(Program program, String enrolledYear, int semester, int roll) {
         this.program = program;
         this.enrolledYear = enrolledYear;
         this.semester = semester;
@@ -69,14 +58,6 @@ public class Student {
         this.program = program;
     }
 
-    public List<Subject> getSubjects() {
-        return subjects;
-    }
-
-    public void setSubjects(List<Subject> subjects) {
-        this.subjects = subjects;
-    }
-
     public String getEnrolledYear() {
         return enrolledYear;
     }
@@ -93,8 +74,6 @@ public class Student {
                 ", semester=" + semester +
                 ", enrolledYear='" + enrolledYear + '\'' +
                 ", program=" + program +
-                ", subjects=" + subjects +
                 '}';
     }
 }
-

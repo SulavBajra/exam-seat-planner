@@ -54,9 +54,8 @@ public class RoomController {
 
     @GetMapping("/available")
     public ResponseEntity<List<Room>> getAvailableRooms(
-            @RequestParam String date,
-            @RequestParam String time) {
-        List<Room> availableRooms = roomService.getAvailableRooms(date, time);
+            @RequestParam String date) {
+        List<Room> availableRooms = roomService.getAvailableRooms(date);
         return ResponseEntity.ok(availableRooms);
     }
 }

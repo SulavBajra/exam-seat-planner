@@ -10,8 +10,7 @@ public class Subject {
     private Integer subjectCode;
 
     private String subjectName;
-    private int duration;
-    private String timeSlot;
+    private int semester;
 
     @ManyToOne
     @JoinColumn(name = "program_code")
@@ -20,11 +19,10 @@ public class Subject {
     public Subject() {
     }
 
-    public Subject(Integer subjectCode, String subjectName, int duration, String timeSlot) {
+    public Subject(Integer subjectCode, String subjectName, int semester) {
         this.subjectCode = subjectCode;
         this.subjectName = subjectName;
-        this.duration = duration;
-        this.timeSlot = timeSlot;
+        this.semester = semester;
     }
 
     public Integer getSubjectCode() {
@@ -43,20 +41,12 @@ public class Subject {
         this.subjectName = subjectName;
     }
 
-    public int getDuration() {
-        return duration;
+    public int getSemester() {
+        return semester;
     }
 
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
-
-    public String getTimeSlot() {
-        return timeSlot;
-    }
-
-    public void setTimeSlot(String timeSlot) {
-        this.timeSlot = timeSlot;
+    public void setSemester(int semester) {
+        this.semester = semester;
     }
 
     public Program getProgram() {
@@ -72,8 +62,7 @@ public class Subject {
         return "Subject{" +
                 "subjectCode=" + subjectCode +
                 ", subjectName='" + subjectName + '\'' +
-                ", duration=" + duration +
-                ", timeSlot='" + timeSlot + '\'' +
+                ", semester=" + semester +
                 ", program=" + (program != null ? program.getProgramName() : "null") +
                 '}';
     }

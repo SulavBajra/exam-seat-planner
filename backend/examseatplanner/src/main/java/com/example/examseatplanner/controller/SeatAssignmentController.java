@@ -2,7 +2,7 @@ package com.example.examseatplanner.controller;
 
 import com.example.examseatplanner.dto.RoomSeatDTO;
 import com.example.examseatplanner.dto.SeatAssignmentDTO;
-import com.example.examseatplanner.service.SeatAllocationService;
+import com.example.examseatplanner.service.ImprovedSeatAllocationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,9 +15,9 @@ import java.util.List;
 @RequestMapping("/api/seats")
 public class SeatAssignmentController {
 
-    private final SeatAllocationService seatAllocationService;
+    private final ImprovedSeatAllocationService seatAllocationService;
 
-    public SeatAssignmentController(SeatAllocationService seatAllocationService) {
+    public SeatAssignmentController(ImprovedSeatAllocationService seatAllocationService) {
         this.seatAllocationService = seatAllocationService;
     }
 

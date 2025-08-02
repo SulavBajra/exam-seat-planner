@@ -1,9 +1,6 @@
 package com.example.examseatplanner.dto;
 
 import com.example.examseatplanner.model.Student;
-import com.example.examseatplanner.model.Subject;
-
-import java.util.List;
 
 public record StudentResponseDTO(
         String studentId,
@@ -11,7 +8,7 @@ public record StudentResponseDTO(
         int semester,
         int roll,
         String programName,
-        List<String> subjectNames
+        Integer programCode
 ) {
     public static StudentResponseDTO fromEntity(Student student) {
         return new StudentResponseDTO(
@@ -20,9 +17,7 @@ public record StudentResponseDTO(
                 student.getSemester(),
                 student.getRoll(),
                 student.getProgram().getProgramName(),
-                student.getSubjects().stream()
-                        .map(Subject::getSubjectName)
-                        .toList()
+                student.getProgram().getProgramCode()
         );
     }
 }
