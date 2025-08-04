@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootApplication
-public class ExamSeatPlannerApplication {
+public class  ExamSeatPlannerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ExamSeatPlannerApplication.class, args);
 	}

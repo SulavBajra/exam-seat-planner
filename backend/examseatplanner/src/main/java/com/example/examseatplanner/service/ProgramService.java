@@ -35,7 +35,6 @@ public class ProgramService {
             throw new RuntimeException("Program with code " + dto.programCode() + " already exists");
         }
 
-        // Create and save the program
         Program program = new Program(dto.programName(), dto.programCode());
         Program savedProgram = programRepository.save(program);
 

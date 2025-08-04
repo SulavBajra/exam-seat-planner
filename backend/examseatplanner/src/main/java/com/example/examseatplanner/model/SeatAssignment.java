@@ -20,13 +20,13 @@ public class SeatAssignment {
     private Integer seatNumber;
 
     @ManyToOne
-    @JoinColumn(name = "exam_id")  // This should reference exam_id
+    @JoinColumn(name = "exam_id")
     private Exam exam;
 
-    @Column(name = "seat_row")  // Using seat_row to avoid reserved keyword
+    @Column(name = "seat_row")
     private int seatRow;
 
-    @Column(name = "seat_column")  // Using seat_column to avoid reserved keyword
+    @Column(name = "seat_column")
     private int seatColumn;
 
     public SeatAssignment() {

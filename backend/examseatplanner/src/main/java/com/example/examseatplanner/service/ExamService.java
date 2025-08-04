@@ -66,7 +66,6 @@ public class ExamService {
                             eligibleStudents.size(), totalCapacity));
         }
     }
-    // Add these methods to your ExamService class
 
     public List<Exam> getExamsByDate(String date) {
         LocalDate examDate = LocalDate.parse(date);
@@ -74,14 +73,11 @@ public class ExamService {
     }
 
     public ExamResponseDTO updateExam(Integer examId, ExamRequestDTO dto) {
-        // First validate the updated exam schedule
         validateExamSchedule(dto);
 
-        // Find existing exam
         Exam existingExam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
 
-        // Update exam details
         Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
@@ -114,21 +110,17 @@ public class ExamService {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
 
-        // Get students for this exam
         List<Student> students = getStudentsForExam(exam);
 
-        // Allocate seats
         seatAllocationService.allocateSeats(exam, students);
     }
 
     public ExamResponseDTO createExam(ExamRequestDTO dto) {
-        // Validate exam schedule
         validateExamSchedule(dto);
 
         Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        // Get students automatically based on subject's program and semester
         List<Student> students = studentRepository
                 .findByProgramAndSemester(subject.getProgram(), subject.getSemester());
 
@@ -144,7 +136,6 @@ public class ExamService {
 
         Exam savedExam = examRepository.save(exam);
 
-        // Pass students separately to seat allocation service
         seatAllocationService.allocateSeats(savedExam, students);
 
         return ExamResponseDTO.fromEntity(savedExam);
@@ -162,7 +153,6 @@ public class ExamService {
         return ExamResponseDTO.fromEntity(exam);
     }
 
-    // Helper method to get students for an exam
     public List<Student> getStudentsForExam(Exam exam) {
         Subject subject = exam.getSubject();
         return studentRepository.findByProgramAndSemester(

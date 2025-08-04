@@ -34,7 +34,6 @@ public class RoomService {
     }
 
     public Room saveRoom(Room room) {
-        // Calculate seating capacity based on rows and columns
         room.setSeatingCapacity(room.getNumRow() * room.getNumColumn());
         return roomRepository.save(room);
     }
@@ -49,19 +48,15 @@ public class RoomService {
     public List<Room> getAvailableRooms(String dateStr) {
         LocalDate date = LocalDate.parse(dateStr);
 
-        // Get all rooms
         List<Room> allRooms = roomRepository.findAll();
 
-        // Get exams scheduled for the given date
         List<Exam> scheduledExams = examRepository.findByDate(date);
 
-        // Get room numbers that are already booked
         Set<Integer> bookedRoomNos = scheduledExams.stream()
                 .flatMap(exam -> exam.getRooms().stream())
                 .map(Room::getRoomNo)
                 .collect(Collectors.toSet());
 
-        // Return available rooms
         return allRooms.stream()
                 .filter(room -> !bookedRoomNos.contains(room.getRoomNo()))
                 .toList();

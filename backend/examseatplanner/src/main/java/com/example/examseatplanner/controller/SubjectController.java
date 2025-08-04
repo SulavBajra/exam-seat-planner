@@ -1,5 +1,6 @@
 package com.example.examseatplanner.controller;
 
+import com.example.examseatplanner.dto.SubjectDTO;
 import com.example.examseatplanner.model.Subject;
 import com.example.examseatplanner.service.SubjectService;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +36,8 @@ public class SubjectController {
     }
 
     @PostMapping
-    public Subject createSubject(@RequestBody Subject subject) {
-        return subjectService.saveSubject(subject);
+    public Subject createSubject(@RequestBody SubjectDTO subjectDTO) {
+        return subjectService.createSubject(subjectDTO);
     }
 
     @DeleteMapping("/{subjectCode}")

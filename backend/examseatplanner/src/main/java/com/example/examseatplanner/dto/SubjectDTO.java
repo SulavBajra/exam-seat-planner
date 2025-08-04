@@ -10,7 +10,7 @@ public record SubjectDTO(
         String subjectName,
 
         @NotNull(message = "Semester is required")
-        @Min(value = 1, message = "Semester must be at least 1")
+        @Min(value = 1, message = "Semester must be at least 1")        
         @Max(value = 8, message = "Semester must be at most 8")
         Integer semester,
 
