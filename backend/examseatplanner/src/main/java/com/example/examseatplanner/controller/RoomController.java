@@ -1,10 +1,9 @@
 package com.example.examseatplanner.controller;
 
-import com.example.examseatplanner.model.Room;
+import com.example.examseatplanner.dto.RoomRequestDTO;
+import com.example.examseatplanner.dto.RoomResponseDTO;
 import com.example.examseatplanner.service.RoomService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rooms")
 public class RoomController {
+
     private final RoomService roomService;
 
     @Autowired
@@ -21,41 +21,45 @@ public class RoomController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Room>> getAllRooms() {
-        return ResponseEntity.ok(roomService.getAllRooms());
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<Room> createRoom(@Valid @RequestBody Room room) {
-        Room savedRoom = roomService.saveRoom(room);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
+    public List<RoomResponseDTO> getAllRooms() {
+        return roomService.getAllRooms();
     }
 
     @GetMapping("/{roomNo}")
-    public ResponseEntity<Room> getRoomByNo(@PathVariable Integer roomNo) {
-        return roomService.getRoomByNo(roomNo)
+    public ResponseEntity<RoomResponseDTO> getRoomById(@PathVariable Integer roomNo) {
+        return roomService.getRoomById(roomNo)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping
+    public RoomResponseDTO createRoom(@RequestBody RoomRequestDTO dto) {
+        return roomService.saveRoom(dto);
+    }
+
     @PutMapping("/{roomNo}")
-    public ResponseEntity<Room> updateRoom(@PathVariable Integer roomNo,
-                                           @Valid @RequestBody Room room) {
-        room.setRoomNo(roomNo);
-        Room updatedRoom = roomService.saveRoom(room);
+    public ResponseEntity<RoomResponseDTO> updateRoom(@PathVariable Integer roomNo,
+                                                      @RequestBody RoomRequestDTO dto) {
+        if (roomService.getRoomById(roomNo).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        // Set correct ID before updating
+        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow(), dto.numColumn());
+        RoomResponseDTO updatedRoom = roomService.saveRoom(dto);
         return ResponseEntity.ok(updatedRoom);
     }
 
     @DeleteMapping("/{roomNo}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Integer roomNo) {
+        if (roomService.getRoomById(roomNo).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         roomService.deleteRoom(roomNo);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/available")
-    public ResponseEntity<List<Room>> getAvailableRooms(
-            @RequestParam String date) {
-        List<Room> availableRooms = roomService.getAvailableRooms(date);
-        return ResponseEntity.ok(availableRooms);
+    @GetMapping("/search")
+    public List<RoomResponseDTO> getRoomsWithMinCapacity(@RequestParam int minCapacity) {
+        return roomService.getRoomsWithMinCapacity(minCapacity);
     }
 }

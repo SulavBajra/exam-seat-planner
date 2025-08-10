@@ -2,7 +2,7 @@ package com.example.examseatplanner.dto;
 
 import jakarta.validation.constraints.*;
 
-public record ProgramDTO(
+public record ProgramRequestDTO(
         @NotBlank(message = "Program name is required")
         String programName,
 

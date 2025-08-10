@@ -1,163 +1,85 @@
 package com.example.examseatplanner.service;
 
 import com.example.examseatplanner.dto.ExamRequestDTO;
-import com.example.examseatplanner.dto.ExamResponseDTO;
+import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
+import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Room;
-import com.example.examseatplanner.model.Student;
-import com.example.examseatplanner.model.Subject;
-import com.example.examseatplanner.repository.*;
+import com.example.examseatplanner.repository.ExamRepository;
+import com.example.examseatplanner.repository.ProgramRepository;
+import com.example.examseatplanner.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ExamService {
 
     private final ExamRepository examRepository;
+    private final ProgramRepository programRepository;
     private final RoomRepository roomRepository;
-    private final SubjectRepository subjectRepository;
-    private final StudentRepository studentRepository;
-    private final ImprovedSeatAllocationService seatAllocationService;
 
     @Autowired
     public ExamService(ExamRepository examRepository,
-                       RoomRepository roomRepository,
-                       SubjectRepository subjectRepository,
-                       StudentRepository studentRepository,
-                       ImprovedSeatAllocationService seatAllocationService) {
+                       ProgramRepository programRepository,
+                       RoomRepository roomRepository) {
         this.examRepository = examRepository;
+        this.programRepository = programRepository;
         this.roomRepository = roomRepository;
-        this.subjectRepository = subjectRepository;
-        this.studentRepository = studentRepository;
-        this.seatAllocationService = seatAllocationService;
     }
 
-    public void validateExamSchedule(ExamRequestDTO dto) {
-        LocalDate examDate = LocalDate.parse(dto.date());
+    public List<Exam> getAllExams() {
+        return examRepository.findAll();
+    }
 
-        // Check for room conflicts on the same date
-        List<Exam> conflictingExams = examRepository.findByDate(examDate).stream()
-                .filter(exam -> exam.getRooms().stream()
-                        .anyMatch(room -> dto.roomNumbers().contains(room.getRoomNo())))
-                .toList();
+    public Optional<Exam> getExamById(Integer examId) {
+        return examRepository.findById(examId);
+    }
 
-        if (!conflictingExams.isEmpty()) {
-            throw new IllegalArgumentException("Room conflict detected for the specified date");
+    public Exam saveExam(Exam exam) {
+        return examRepository.save(exam);
+    }
+
+    public Exam saveFromDto(ExamRequestDTO dto) {
+        List<Program> programs = programRepository.findAllById(dto.programCodes()); // dto must have programCodes()
+        if (programs.size() != dto.programCodes().size()) {
+            throw new IllegalArgumentException("One or more program codes are invalid");
         }
 
-        // Get subject to determine students
-        Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-        // Get students automatically based on subject's program and semester
-        List<Student> eligibleStudents = studentRepository
-                .findByProgramAndSemester(subject.getProgram(), subject.getSemester());
-
-        // Check if rooms have enough capacity
-        List<Room> rooms = roomRepository.findAllByRoomNoIn(dto.roomNumbers());
-        int totalCapacity = rooms.stream().mapToInt(Room::getSeatingCapacity).sum();
-
-        if (eligibleStudents.size() > totalCapacity) {
-            throw new IllegalArgumentException(
-                    String.format("Not enough seats: %d students, %d seats available",
-                            eligibleStudents.size(), totalCapacity));
-        }
-    }
-
-    public List<Exam> getExamsByDate(String date) {
-        LocalDate examDate = LocalDate.parse(date);
-        return examRepository.findByDate(examDate);
-    }
-
-    public ExamResponseDTO updateExam(Integer examId, ExamRequestDTO dto) {
-        validateExamSchedule(dto);
-
-        Exam existingExam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
-
-        Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-        List<Room> rooms = roomRepository.findAllByRoomNoIn(dto.roomNumbers());
+        List<Room> rooms = roomRepository.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
-            throw new RuntimeException("Some rooms not found");
+            throw new IllegalArgumentException("One or more room numbers are invalid");
         }
 
-        existingExam.setSubject(subject);
-        existingExam.setDate(LocalDate.parse(dto.date()));
-        existingExam.setRooms(rooms);
-
-        Exam updatedExam = examRepository.save(existingExam);
-
-        // Re-allocate seats with updated information
-        List<Student> students = studentRepository
-                .findByProgramAndSemester(subject.getProgram(), subject.getSemester());
-        seatAllocationService.allocateSeats(updatedExam, students);
-
-        return ExamResponseDTO.fromEntity(updatedExam);
+        Exam exam = ExamMapper.toEntity(dto, programs, rooms);
+        return examRepository.save(exam);
     }
 
     public void deleteExam(Integer examId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
-        examRepository.delete(exam);
+        examRepository.deleteById(examId);
     }
 
-    public void allocateSeatsForExam(Integer examId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
-
-        List<Student> students = getStudentsForExam(exam);
-
-        seatAllocationService.allocateSeats(exam, students);
+    public List<Exam> getExamsByDate(LocalDate date) {
+        return examRepository.findByDate(date);
     }
 
-    public ExamResponseDTO createExam(ExamRequestDTO dto) {
-        validateExamSchedule(dto);
-
-        Subject subject = subjectRepository.findBySubjectCode(dto.subjectCode())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-        List<Student> students = studentRepository
-                .findByProgramAndSemester(subject.getProgram(), subject.getSemester());
-
-        List<Room> rooms = roomRepository.findAllByRoomNoIn(dto.roomNumbers());
-        if (rooms.size() != dto.roomNumbers().size()) {
-            throw new RuntimeException("Some rooms not found");
-        }
-
-        Exam exam = new Exam();
-        exam.setSubject(subject);
-        exam.setDate(LocalDate.parse(dto.date()));
-        exam.setRooms(rooms);
-
-        Exam savedExam = examRepository.save(exam);
-
-        seatAllocationService.allocateSeats(savedExam, students);
-
-        return ExamResponseDTO.fromEntity(savedExam);
+    public List<Exam> getExamsByProgram(Program program) {
+        return examRepository.findByProgramsContaining(program);
     }
 
-    public List<ExamResponseDTO> getAllExams() {
-        return examRepository.findAll().stream()
-                .map(ExamResponseDTO::fromEntity)
-                .toList();
+    public List<Exam> getExamsByDateRange(LocalDate startDate, LocalDate endDate) {
+        return examRepository.findByDateBetween(startDate, endDate);
     }
 
-    public ExamResponseDTO getExamById(Integer id) {
-        Exam exam = examRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
-        return ExamResponseDTO.fromEntity(exam);
+    public List<Exam> getExamsByProgramCode(Integer programCode) {
+        return examRepository.findByPrograms_ProgramCode(programCode);
     }
 
-    public List<Student> getStudentsForExam(Exam exam) {
-        Subject subject = exam.getSubject();
-        return studentRepository.findByProgramAndSemester(
-                subject.getProgram(),
-                subject.getSemester()
-        );
+    public boolean isRoomAvailable(Integer roomNo, LocalDate date) {
+        List<Exam> conflictingExams = examRepository.findByRoomAndDate(roomNo, date);
+        return conflictingExams.isEmpty();
     }
 }

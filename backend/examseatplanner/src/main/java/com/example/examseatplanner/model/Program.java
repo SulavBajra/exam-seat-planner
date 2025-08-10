@@ -1,7 +1,6 @@
 package com.example.examseatplanner.model;
 
 import jakarta.persistence.*;
-import java.util.List;
 
 @Entity
 public class Program {
@@ -11,18 +10,16 @@ public class Program {
 
     private String programName;
 
-    @OneToMany
-    @JoinColumn(name = "program_code", referencedColumnName = "programCode")
-    private List<Subject> subjects;
 
-    public Program() {
-    }
+    // Constructors
+    public Program() {}
 
     public Program(String programName, Integer programCode) {
         this.programName = programName;
         this.programCode = programCode;
     }
 
+    // Getters and Setters
     public Integer getProgramCode() {
         return programCode;
     }
@@ -37,14 +34,6 @@ public class Program {
 
     public void setProgramName(String programName) {
         this.programName = programName;
-    }
-
-    public List<Subject> getSubjects() {
-        return subjects;
-    }
-
-    public void setSubjects(List<Subject> subjects) {
-        this.subjects = subjects;
     }
 
     @Override

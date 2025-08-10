@@ -8,19 +8,19 @@ public class Room {
     @Id
     private Integer roomNo;
 
-    private int seatingCapacity;
     private int numRow;
     private int numColumn;
 
-    public Room(){
+    // Number of seats per bench (fixed to 2 for your design)
+    public static final int SEATS_PER_BENCH = 2;
 
+    public Room() {
     }
 
-    public Room(Integer roomNo, int numColumn, int numRow, int seatingCapacity) {
+    public Room(Integer roomNo, int numColumn, int numRow) {
         this.roomNo = roomNo;
         this.numColumn = numColumn;
         this.numRow = numRow;
-        this.seatingCapacity = seatingCapacity;
     }
 
     public Integer getRoomNo() {
@@ -47,21 +47,18 @@ public class Room {
         this.numRow = numRow;
     }
 
+    // Dynamically calculated seating capacity based on rows, columns, and seats per bench
     public int getSeatingCapacity() {
-        return seatingCapacity;
-    }
-
-    public void setSeatingCapacity(int seatingCapacity) {
-        this.seatingCapacity = seatingCapacity;
+        return numRow * numColumn * SEATS_PER_BENCH;
     }
 
     @Override
     public String toString() {
         return "Room{" +
                 "roomNo=" + roomNo +
-                ", seatingCapacity=" + seatingCapacity +
                 ", numRow=" + numRow +
                 ", numColumn=" + numColumn +
+                ", seatingCapacity=" + getSeatingCapacity() +
                 '}';
     }
 }

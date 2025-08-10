@@ -1,312 +1,309 @@
-//package com.example.examseatplanner.service;
-//
-//import com.example.examseatplanner.dto.RoomSeatDTO;
-//import com.example.examseatplanner.dto.SeatAssignmentDTO;
-//import com.example.examseatplanner.model.*;
-//import com.example.examseatplanner.repository.SeatAssignmentRepository;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//import org.apache.poi.ss.usermodel.*;
-//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-//import java.io.File;
-//import java.io.FileInputStream;
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.*;
-//import java.util.stream.Collectors;
-//
-//@Service
-//public class SeatAllocationService {
-//
-//    private final SeatAssignmentRepository seatAssignmentRepository;
-//
-//    @Autowired
-//    public SeatAllocationService(SeatAssignmentRepository seatAssignmentRepository) {
-//        this.seatAssignmentRepository = seatAssignmentRepository;
-//    }
-//
-//    public List<SeatAssignmentDTO> getSeatPlanByExamId(Integer examId) {
-//        List<SeatAssignment> assignments = seatAssignmentRepository.findByExamId(examId);
-//
-//        return assignments.stream()
-//                .map(sa -> new SeatAssignmentDTO(
-//                        sa.getStudent().getStudentId(),
-//                        sa.getRoom().getRoomNo(),
-//                        sa.getRow(),
-//                        sa.getColumn()
-//                ))
-//                .sorted(Comparator.comparing(SeatAssignmentDTO::roomNo)
-//                        .thenComparing(SeatAssignmentDTO::row)
-//                        .thenComparing(SeatAssignmentDTO::column))
-//                .toList();
-//    }
-//
-//    public List<String> readStudentIdsFromExcel(String filePath) {
-//        List<String> studentIds = new ArrayList<>();
-//        try (FileInputStream fis = new FileInputStream(new File(filePath));
-//             Workbook workbook = new XSSFWorkbook(fis)) {
-//
-//            Sheet sheet = workbook.getSheetAt(0); // Get first sheet
-//            for (Row row : sheet) {
-//                Cell cell = row.getCell(0); // Assuming student IDs are in first column
-//                if (cell != null) {
-//                    switch (cell.getCellType()) {
-//                        case STRING:
-//                            studentIds.add(cell.getStringCellValue());
-//                            break;
-//                        case NUMERIC:
-//                            studentIds.add(String.valueOf((int)cell.getNumericCellValue()));
-//                            break;
-//                    }
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return studentIds;
-//    }
-//
-//    public void validateCapacity(Exam exam) {
-//        int totalStudents = exam.getStudents().size();
-//        int totalSeats = exam.getRooms().stream()
-//                .mapToInt(room -> room.getNumRow() * room.getNumColumn())
-//                .sum();
-//
-//        if (totalStudents > totalSeats) {
-//            throw new IllegalArgumentException(
-//                    String.format("Not enough seats: %d students, %d seats available",
-//                            totalStudents, totalSeats));
-//        }
-//    }
-//
-//    public void allocateSeatsStudentId(Exam exam) {
-//        List<Student> students = new ArrayList<>(exam.getStudents());
-//        List<Room> rooms = exam.getRooms();
-//
-//        // Group students by their subjects (assuming one subject per exam)
-//        Map<Subject, List<Student>> studentsBySubject = students.stream()
-//                .collect(Collectors.groupingBy(student ->
-//                        student.getSubjects().stream()
-//                                .filter(subject -> subject.equals(exam.getSubject()))
-//                                .findFirst()
-//                                .orElse(exam.getSubject())
-//                ));
-//
-//        // Create alternating sequence to minimize same-subject adjacency
-//        List<Student> alternatingStudents = createAlternatingSequence(studentsBySubject);
-//
-//        int studentIndex = 0;
-//
-//        for (Room room : rooms) {
-//            int rows = room.getNumRow();
-//            int cols = room.getNumColumn();
-//
-//            // Use snake pattern (left-to-right, then right-to-left alternating)
-//            for (int r = 0; r < rows && studentIndex < alternatingStudents.size(); r++) {
-//                if (r % 2 == 0) {
-//                    // Left to right
-//                    for (int c = 0; c < cols && studentIndex < alternatingStudents.size(); c++) {
-//                        assignSeat(alternatingStudents.get(studentIndex), room, exam, r, c);
-//                        studentIndex++;
-//                    }
-//                } else {
-//                    // Right to left
-//                    for (int c = cols - 1; c >= 0 && studentIndex < alternatingStudents.size(); c--) {
-//                        assignSeat(alternatingStudents.get(studentIndex), room, exam, r, c);
-//                        studentIndex++;
-//                    }
-//                }
-//            }
-//        }
-//
-//        if (studentIndex < alternatingStudents.size()) {
-//            throw new RuntimeException("Not enough seats for all students. Need " +
-//                    alternatingStudents.size() + " seats, but only " + studentIndex + " available.");
-//        }
-//    }
-//
-//    private List<Student> createAlternatingSequence(Map<Subject, List<Student>> studentsBySubject) {
-//        List<Student> result = new ArrayList<>();
-//        List<List<Student>> subjectLists = new ArrayList<>(studentsBySubject.values());
-//
-//        // Shuffle each subject group
-//        subjectLists.forEach(Collections::shuffle);
-//
-//        int maxSize = subjectLists.stream().mapToInt(List::size).max().orElse(0);
-//
-//        // Round-robin through subjects
-//        for (int i = 0; i < maxSize; i++) {
-//            for (List<Student> subjectList : subjectLists) {
-//                if (i < subjectList.size()) {
-//                    result.add(subjectList.get(i));
-//                }
-//            }
-//        }
-//
-//        return result;
-//    }
-//
-//    private void assignSeat(Student student, Room room, Exam exam, int row, int col) {
-//        SeatAssignment assignment = new SeatAssignment();
-//        assignment.setStudent(student);
-//        assignment.setRoom(room);
-//        assignment.setExam(exam);
-//        assignment.setRow(row);
-//        assignment.setColumn(col);
-//        assignment.setSeatNumber(row * room.getNumColumn() + col + 1); // Calculate seat number
-//
-//        seatAssignmentRepository.save(assignment);
-//    }
-//
-//    public List<RoomSeatDTO> getSeatAssignmentsByExam(Integer examId) {
-//        List<SeatAssignment> assignments = seatAssignmentRepository.findByExamId(examId);
-//
-//        Map<Room, List<SeatAssignment>> groupedByRoom = assignments.stream()
-//                .collect(Collectors.groupingBy(SeatAssignment::getRoom));
-//
-//        List<RoomSeatDTO> roomSeatDTOs = new ArrayList<>();
-//
-//        for (Map.Entry<Room, List<SeatAssignment>> entry : groupedByRoom.entrySet()) {
-//            Room room = entry.getKey();
-//            List<SeatAssignment> roomAssignments = entry.getValue();
-//
-//            List<SeatAssignmentDTO> seatDTOs = roomAssignments.stream()
-//                    .map(sa -> new SeatAssignmentDTO(
-//                            sa.getStudent().getStudentId(),
-//                            room.getRoomNo(),
-//                            sa.getRow(),
-//                            sa.getColumn()
-//                    ))
-//                    .toList();
-//
-//            RoomSeatDTO dto = new RoomSeatDTO(
-//                    room.getRoomNo(),
-//                    room.getNumRow(),
-//                    room.getNumColumn(),
-//                    seatDTOs
-//            );
-//
-//            roomSeatDTOs.add(dto);
-//        }
-//
-//        return roomSeatDTOs;
-//    }
-//
-////    public void allocateSeatsStudentId(Exam exam) {
-////        List<Student> students = new ArrayList<>(exam.getStudents());
-////        List<Room> rooms = exam.getRooms();
-////        Collections.shuffle(students); // Shuffle to avoid clustering same-subject students
-////
-////        int studentIndex = 0;
-////
-////        for (Room room : rooms) {
-////            int rows = room.getNumRow();
-////            int cols = room.getNumColumn();
-////            SeatAssignment[][] grid = new SeatAssignment[rows][cols];
-////
-////            for (int r = 0; r < rows && studentIndex < students.size(); r++) {
-////                for (int c = 0; c < cols && studentIndex < students.size(); c++) {
-////
-////                    Student student = students.get(studentIndex);
-////
-////                    // Check for same subject in adjacent seats
-////                    if (!isAdjacentSameSubject(grid, r, c, student)) {
-////                        SeatAssignment assignment = new SeatAssignment();
-////                        assignment.setRoom(room);
-////                        assignment.setExam(exam);
-////                        assignment.setStudent(student);
-////                        assignment.setRow(r);
-////                        assignment.setColumn(c);
-////
-////                        seatAssignmentRepository.save(assignment);
-////                        grid[r][c] = assignment;
-////
-////                        studentIndex++;
-////                    }
-////                }
-////            }
-////
-////            // Fallback pass: fill remaining seats ignoring adjacency
-////            for (int r = 0; r < rows && studentIndex < students.size(); r++) {
-////                for (int c = 0; c < cols && studentIndex < students.size(); c++) {
-////                    if (grid[r][c] == null) {
-////                        Student student = students.get(studentIndex);
-////                        SeatAssignment assignment = new SeatAssignment();
-////                        assignment.setRoom(room);
-////                        assignment.setExam(exam);
-////                        assignment.setStudent(student);
-////                        assignment.setRow(r);
-////                        assignment.setColumn(c);
-////
-////                        seatAssignmentRepository.save(assignment);
-////                        grid[r][c] = assignment;
-////                        studentIndex++;
-////                    }
-////                }
-////            }
-////        }
-////
-////        if (studentIndex < students.size()) {
-////            throw new RuntimeException("Not enough seats to assign all students.");
-////        }
-////    }
-////
-////    private boolean isAdjacentSameSubject(SeatAssignment[][] grid, int r, int c, Student student) {
-////        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // up, down, left, right
-////        for (int[] d : directions) {
-////            int nr = r + d[0];
-////            int nc = c + d[1];
-////            if (nr >= 0 && nr < grid.length && nc >= 0 && nc < grid[0].length) {
-////                SeatAssignment neighbor = grid[nr][nc];
-////                if (neighbor != null) {
-////                    Student neighborStudent = neighbor.getStudent();
-////                    if (hasSameSubject(student, neighborStudent)) {
-////                        return true;
-////                    }
-////                }
-////            }
-////        }
-////        return false;
-////    }
-////
-////    private boolean hasSameSubject(Student s1, Student s2) {
-////        // Assuming only one subject per exam; use subjectCode
-////        return s1.getSubjects().stream().anyMatch(s2.getSubjects()::contains);
-////    }
-////
-////    public List<SeatAssignmentDTO> getSeatPlanByExamId(Integer examId) {
-////        List<SeatAssignment> assignments = seatAssignmentRepository.findByExamId(examId);
-////
-////        return assignments.stream()
-////                .map(sa -> new SeatAssignmentDTO(
-////                        sa.getStudent().getStudentId(),
-////                        sa.getRoom().getRoomNo(),
-////                        sa.getRow(),
-////                        sa.getColumn()
-////                ))
-////                .toList();
-////    }
-//    //for all conditions
-////    public List<SeatAssignment> allocateSeats(Exam exam) {
-////        List<Student> students = new ArrayList<>(exam.getStudents());
-////        List<Room> rooms = exam.getRooms();
-////
-////        Collections.shuffle(students);
-////
-////        List<SeatAssignment> assignments = new ArrayList<>();
-////        int studentIndex = 0;
-////
-////        for (Room room : rooms) {
-////            int capacity = room.getSeatingCapacity();
-////            for (int seatNo = 1; seatNo <= capacity; seatNo++) {
-////                if (studentIndex >= students.size()) break;
-////
-////                Student student = students.get(studentIndex++);
-////                SeatAssignment assignment = new SeatAssignment(null, seatNo, room, student, exam);
-////                assignments.add(assignment);
-////            }
-////        }
-////
-////        return seatAssignmentRepository.saveAll(assignments);
-////    }
-//}
+package com.example.examseatplanner.service;
+
+import com.example.examseatplanner.dto.SeatDTO;
+import com.example.examseatplanner.model.*;
+import com.example.examseatplanner.repository.SeatRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class SeatAllocationService {
+
+    private final SeatRepository seatRepository;
+    private final StudentService studentService;
+    private final RoomService roomService;
+
+    @Autowired
+    public SeatAllocationService(SeatRepository seatRepository,
+                                 StudentService studentService,
+                                 RoomService roomService) {
+        this.seatRepository = seatRepository;
+        this.studentService = studentService;
+        this.roomService = roomService;
+    }
+
+    public Map<String, List<SeatDTO>> getSeatAssignments(Long examId) {
+        List<Seat> seats = seatRepository.findByExamId(examId);
+
+        // Group by room name
+        return seats.stream()
+                .collect(Collectors.groupingBy(
+                        seat -> seat.getRoom().getRoomName(),
+                        Collectors.mapping(SeatDTO::fromEntity, Collectors.toList())
+                ));
+    }
+
+    /**
+     * Main method to allocate seats for an exam
+     * Creates 3D seating arrangement and assigns students with program alternation
+     */
+    public SeatAllocationResult allocateSeatsForExam(Exam exam) {
+        // Get all students from exam programs
+        List<Student> allStudents = studentService.getStudentsByPrograms(exam.getPrograms());
+
+        // Calculate total 3D capacity (3 sides per room)
+        int totalStudents = allStudents.size();
+        int total3DCapacity = calculateTotal3DCapacity(exam.getRooms());
+
+        if (totalStudents > total3DCapacity) {
+            throw new RuntimeException("Not enough seats for all students. Required: " +
+                    totalStudents + ", Available: " + total3DCapacity);
+        }
+
+        // Generate 3D seat layout and allocate students
+        List<SeatAssignment> assignments = new ArrayList<>();
+        int studentIndex = 0;
+
+        // Shuffle students by programs to ensure good distribution
+        List<Student> shuffledStudents = createOptimalStudentSequence(allStudents, exam.getPrograms());
+
+        for (Room room : exam.getRooms()) {
+            // Generate 3D seat array for this room
+            Seat[][][] seatArray = generate3DSeatArray(room);
+
+            // Allocate students to seats in this room
+            for (int side = 0; side < 3 && studentIndex < shuffledStudents.size(); side++) {
+                for (int row = 0; row < room.getNumRow() && studentIndex < shuffledStudents.size(); row++) {
+                    for (int bench = 0; bench < room.getNumColumn() && studentIndex < shuffledStudents.size(); bench++) {
+                        for (int position = 0; position < Room.SEATS_PER_BENCH && studentIndex < shuffledStudents.size(); position++) {
+
+                            Seat seat = seatArray[side][row][bench * Room.SEATS_PER_BENCH + position];
+                            Student student = shuffledStudents.get(studentIndex);
+
+                            // Assign student to seat
+                            seat.setAssignedStudent(student);
+
+                            // Save seat assignment
+                            Seat savedSeat = seatRepository.save(seat);
+                            assignments.add(new SeatAssignment(savedSeat, student));
+
+                            studentIndex++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new SeatAllocationResult(assignments, exam, totalStudents, total3DCapacity - totalStudents);
+    }
+
+    /**
+     * Calculate total 3D capacity across all rooms
+     * Each room has 3 sides, so multiply base capacity by 3
+     */
+    private int calculateTotal3DCapacity(List<Room> rooms) {
+        return rooms.stream()
+                .mapToInt(room -> room.getSeatingCapacity() * 3) // 3 sides per room
+                .sum();
+    }
+
+    /**
+     * Generates a 3D array of seats for a room
+     * Dimensions: [sides][rows][seats_per_row]
+     * sides = 3 (Left, Middle, Right)
+     * rows = room.getNumRow()
+     * seats_per_row = room.getNumColumn() * SEATS_PER_BENCH
+     */
+    private Seat[][][] generate3DSeatArray(Room room) {
+        int sides = 3; // Left (0), Middle (1), Right (2)
+        int rows = room.getNumRow();
+        int seatsPerRow = room.getNumColumn() * Room.SEATS_PER_BENCH;
+
+        Seat[][][] seatArray = new Seat[sides][rows][seatsPerRow];
+
+        for (int side = 0; side < sides; side++) {
+            for (int row = 0; row < rows; row++) {
+                for (int seatInRow = 0; seatInRow < seatsPerRow; seatInRow++) {
+                    int benchNumber = seatInRow / Room.SEATS_PER_BENCH;
+                    int seatPosition = seatInRow % Room.SEATS_PER_BENCH;
+
+                    Seat seat = new Seat();
+                    seat.setRowNumber(row);
+                    seat.setBenchNumber(benchNumber);
+                    seat.setSeatSide(side);
+                    seat.setSeatPosition(seatPosition);
+                    seat.setRoom(room);
+                    seat.setAssignedStudent(null); // Will be assigned later
+
+                    seatArray[side][row][seatInRow] = seat;
+                }
+            }
+        }
+
+        return seatArray;
+    }
+
+    /**
+     * Creates an optimal student sequence with program alternation
+     * This prevents students from the same program sitting adjacent to each other
+     */
+    private List<Student> createOptimalStudentSequence(List<Student> allStudents, List<Program> programs) {
+        // Group students by program
+        Map<Integer, List<Student>> studentsByProgram = new HashMap<>();
+        for (Student student : allStudents) {
+            studentsByProgram.computeIfAbsent(
+                    student.getProgram().getProgramCode(),
+                    k -> new ArrayList<>()
+            ).add(student);
+        }
+
+        // Shuffle students within each program
+        for (List<Student> programStudents : studentsByProgram.values()) {
+            Collections.shuffle(programStudents);
+        }
+
+        // Create alternating sequence
+        List<Student> sequence = new ArrayList<>();
+        List<Integer> programCodes = new ArrayList<>(studentsByProgram.keySet());
+
+        // Continue until all students are assigned
+        while (!studentsByProgram.isEmpty()) {
+            Iterator<Integer> programIterator = programCodes.iterator();
+
+            while (programIterator.hasNext()) {
+                Integer programCode = programIterator.next();
+                List<Student> programStudents = studentsByProgram.get(programCode);
+
+                if (programStudents != null && !programStudents.isEmpty()) {
+                    sequence.add(programStudents.remove(0));
+
+                    // Remove program if no more students
+                    if (programStudents.isEmpty()) {
+                        studentsByProgram.remove(programCode);
+                        programIterator.remove();
+                    }
+                }
+            }
+        }
+
+        return sequence;
+    }
+
+    /**
+     * Gets the seating chart for a specific exam
+     */
+    public Map<Room, Seat[][][]> getSeatingChart(Exam exam) {
+        Map<Room, Seat[][][]> seatingChart = new HashMap<>();
+
+        for (Room room : exam.getRooms()) {
+            List<Seat> roomSeats = seatRepository.findByRoomRoomNo(room.getRoomNo());
+            Seat[][][] seatArray = organizeSeatsByPosition(room, roomSeats);
+            seatingChart.put(room, seatArray);
+        }
+
+        return seatingChart;
+    }
+
+    /**
+     * Organizes seats from database into 3D array structure
+     */
+    private Seat[][][] organizeSeatsByPosition(Room room, List<Seat> seats) {
+        int sides = 3;
+        int rows = room.getNumRow();
+        int seatsPerRow = room.getNumColumn() * Room.SEATS_PER_BENCH;
+
+        Seat[][][] seatArray = new Seat[sides][rows][seatsPerRow];
+
+        for (Seat seat : seats) {
+            int side = seat.getSeatSide();
+            int row = seat.getRowNumber();
+            int seatIndex = seat.getBenchNumber() * Room.SEATS_PER_BENCH + seat.getSeatPosition();
+
+            if (side < sides && row < rows && seatIndex < seatsPerRow) {
+                seatArray[side][row][seatIndex] = seat;
+            }
+        }
+
+        return seatArray;
+    }
+
+    /**
+     * Clears all seat assignments for an exam
+     */
+    public void clearSeatAssignments(Exam exam) {
+        for (Room room : exam.getRooms()) {
+            List<Seat> roomSeats = seatRepository.findByRoomRoomNo(room.getRoomNo());
+            for (Seat seat : roomSeats) {
+                seat.setAssignedStudent(null);
+                seatRepository.save(seat);
+            }
+        }
+    }
+
+    /**
+     * Validates seat allocation rules
+     */
+    public List<String> validateSeatAllocation(Exam exam) {
+        List<String> violations = new ArrayList<>();
+        Map<Room, Seat[][][]> seatingChart = getSeatingChart(exam);
+
+        for (Map.Entry<Room, Seat[][][]> entry : seatingChart.entrySet()) {
+            Room room = entry.getKey();
+            Seat[][][] seats = entry.getValue();
+
+            // Check for adjacent students from same program
+            for (int side = 0; side < 3; side++) {
+                for (int row = 0; row < room.getNumRow(); row++) {
+                    for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH - 1; seatIndex++) {
+                        Seat currentSeat = seats[side][row][seatIndex];
+                        Seat nextSeat = seats[side][row][seatIndex + 1];
+
+                        if (currentSeat != null && nextSeat != null &&
+                                currentSeat.getAssignedStudent() != null && nextSeat.getAssignedStudent() != null) {
+
+                            if (currentSeat.getAssignedStudent().getProgram().getProgramCode().equals(
+                                    nextSeat.getAssignedStudent().getProgram().getProgramCode())) {
+
+                                violations.add(String.format(
+                                        "Room %d: Adjacent students from same program at Side %d, Row %d, Seats %d-%d",
+                                        room.getRoomNo(), side, row, seatIndex, seatIndex + 1
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return violations;
+    }
+
+    // Inner classes for result structures
+    public static class SeatAllocationResult {
+        private final List<SeatAssignment> assignments;
+        private final Exam exam;
+        private final int totalStudents;
+        private final int remainingCapacity;
+
+        public SeatAllocationResult(List<SeatAssignment> assignments, Exam exam,
+                                    int totalStudents, int remainingCapacity) {
+            this.assignments = assignments;
+            this.exam = exam;
+            this.totalStudents = totalStudents;
+            this.remainingCapacity = remainingCapacity;
+        }
+
+        // Getters
+        public List<SeatAssignment> getAssignments() { return assignments; }
+        public Exam getExam() { return exam; }
+        public int getTotalStudents() { return totalStudents; }
+        public int getRemainingCapacity() { return remainingCapacity; }
+    }
+
+    public static class SeatAssignment {
+        private final Seat seat;
+        private final Student student;
+
+        public SeatAssignment(Seat seat, Student student) {
+            this.seat = seat;
+            this.student = student;
+        }
+
+        // Getters
+        public Seat getSeat() { return seat; }
+        public Student getStudent() { return student; }
+    }
+}

@@ -1,7 +1,7 @@
 package com.example.examseatplanner.repository;
 
-import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Student;
+import com.example.examseatplanner.model.Program;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,18 +12,68 @@ import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, String> {
-    @Query("SELECT MAX(s.roll) FROM Student s WHERE s.program = :program")
-    Optional<Integer> findMaxRollByProgram(@Param("program") Program program);
 
-    List<Student> findBySemester(int semester);
+    /**
+     * Find students by program
+     */
+    List<Student> findByProgram(Program program);
 
-    Optional<Student> findByRoll(int roll);
+    /**
+     * Find students by multiple programs
+     */
+    List<Student> findByProgramIn(List<Program> programs);
 
-    Optional<Student> findByStudentId(String studentId);
+    /**
+     * Find students by semester
+     */
+    List<Student> findBySemester(Student.Semester semester);
 
-    Boolean existsByStudentId(String studentId);
+    /**
+     * Find students by program and semester
+     */
+    List<Student> findByProgramAndSemester(Program program, Student.Semester semester);
 
-    List<Student> findByProgramAndSemester(Program program, int semester);
+    /**
+     * Find students by program code and semester
+     */
+    @Query("SELECT s FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester")
+    List<Student> findByProgramCodeAndSemester(@Param("programCode") Integer programCode,
+                                               @Param("semester") Student.Semester semester);
 
-    List<Student> findByProgramProgramCodeAndSemester(Integer programCode, int semester);
+    /**
+     * Check if roll number is taken for a program and semester
+     */
+    boolean existsByRollAndProgramAndSemester(int roll, Program program, Student.Semester semester);
+
+    /**
+     * Find students by roll number
+     */
+    List<Student> findByRoll(int roll);
+
+    /**
+     * Find student by program, semester, and roll
+     */
+    Optional<Student> findByProgramAndSemesterAndRoll(Program program, Student.Semester semester, int roll);
+
+    /**
+     * Count students in a program
+     */
+    long countByProgram(Program program);
+
+    /**
+     * Count students in a semester
+     */
+    long countBySemester(Student.Semester semester);
+
+    /**
+     * Find students with roll numbers in range
+     */
+    List<Student> findByRollBetween(int startRoll, int endRoll);
+
+    /**
+     * Get max roll number for a program and semester
+     */
+    @Query("SELECT MAX(s.roll) FROM Student s WHERE s.program = :program AND s.semester = :semester")
+    Optional<Integer> findMaxRollByProgramAndSemester(@Param("program") Program program,
+                                                      @Param("semester") Student.Semester semester);
 }

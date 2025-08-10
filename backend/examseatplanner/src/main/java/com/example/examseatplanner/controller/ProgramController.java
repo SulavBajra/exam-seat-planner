@@ -1,11 +1,10 @@
 package com.example.examseatplanner.controller;
 
-import com.example.examseatplanner.dto.ProgramDTO;
-import com.example.examseatplanner.model.Program;
+import com.example.examseatplanner.dto.ProgramRequestDTO;
+import com.example.examseatplanner.dto.ProgramResponseDTO;
 import com.example.examseatplanner.service.ProgramService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,22 +12,60 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/programs")
 public class ProgramController {
+
     private final ProgramService programService;
 
     @Autowired
-    public ProgramController(ProgramService programService){
+    public ProgramController(ProgramService programService) {
         this.programService = programService;
     }
 
-    @PostMapping("/save")
-    public ResponseEntity<ProgramDTO> saveProgram(@Validated @RequestBody ProgramDTO dto){
-        return ResponseEntity.ok(programService.saveProgram(dto));
-    }
-
     @GetMapping
-    public ResponseEntity<List<ProgramDTO>> getAllPrograms(){
-        return ResponseEntity.ok(programService.getAllPrograms());
+    public List<ProgramResponseDTO> getAllPrograms() {
+        return programService.getAllPrograms();
+    }
+
+    @GetMapping("/{programCode}")
+    public ResponseEntity<ProgramResponseDTO> getProgramById(@PathVariable Integer programCode) {
+        return programService.getProgramById(programCode)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ProgramResponseDTO createProgram(@RequestBody ProgramRequestDTO programRequestDTO) {
+        return programService.saveProgram(programRequestDTO);
+    }
+
+    @PutMapping("/{programCode}")
+    public ResponseEntity<ProgramResponseDTO> updateProgram(@PathVariable Integer programCode,
+                                                            @RequestBody ProgramRequestDTO programRequestDTO) {
+        if (programService.getProgramById(programCode).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Create a new DTO with path variable programCode to avoid mismatch
+        ProgramRequestDTO dtoWithCorrectCode = new ProgramRequestDTO(
+                programRequestDTO.programName(),
+                programCode
+        );
+
+        ProgramResponseDTO updatedProgram = programService.saveProgram(dtoWithCorrectCode);
+        return ResponseEntity.ok(updatedProgram);
     }
 
 
+    @DeleteMapping("/{programCode}")
+    public ResponseEntity<Void> deleteProgram(@PathVariable Integer programCode) {
+        if (programService.getProgramById(programCode).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        programService.deleteProgram(programCode);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search")
+    public List<ProgramResponseDTO> searchPrograms(@RequestParam String name) {
+        return programService.searchProgramsByName(name);
+    }
 }

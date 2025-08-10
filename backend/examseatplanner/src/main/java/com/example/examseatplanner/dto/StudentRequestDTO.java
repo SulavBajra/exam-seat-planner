@@ -3,8 +3,6 @@ package com.example.examseatplanner.dto;
 import jakarta.validation.constraints.*;
 
 public record StudentRequestDTO(
-        @NotBlank(message = "Enrolled year is required")
-        String enrolledYear,
 
         @NotNull(message = "Program code is required")
         Integer programCode,

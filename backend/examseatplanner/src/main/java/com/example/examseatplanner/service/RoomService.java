@@ -1,70 +1,56 @@
 package com.example.examseatplanner.service;
 
-import com.example.examseatplanner.model.Exam;
+import com.example.examseatplanner.dto.RoomRequestDTO;
+import com.example.examseatplanner.dto.RoomResponseDTO;
+import com.example.examseatplanner.mapper.RoomMapper;
 import com.example.examseatplanner.model.Room;
-import com.example.examseatplanner.repository.ExamRepository;
+import com.example.examseatplanner.model.Seat;
 import com.example.examseatplanner.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
 
     private final RoomRepository roomRepository;
-    private final ExamRepository examRepository;
 
     @Autowired
-    public RoomService(RoomRepository roomRepository, ExamRepository examRepository) {
+    public RoomService(RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
-        this.examRepository = examRepository;
     }
 
-    public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+    public List<RoomResponseDTO> getAllRooms() {
+        return RoomMapper.toDTOList(roomRepository.findAll());
     }
 
-    public Optional<Room> getRoomByNo(Integer roomNo) {
-        return roomRepository.findByRoomNo(roomNo);
+    public Optional<RoomResponseDTO> getRoomById(Integer roomNo) {
+        return roomRepository.findById(roomNo)
+                .map(RoomMapper::toDTO);
     }
 
-    public Room saveRoom(Room room) {
-        room.setSeatingCapacity(room.getNumRow() * room.getNumColumn());
-        return roomRepository.save(room);
+    public List<Room> findAllById(Iterable<Integer> ids) {
+        return roomRepository.findAllById(ids);
+    }
+
+    public RoomResponseDTO saveRoom(RoomRequestDTO dto) {
+        Room room = RoomMapper.toEntity(dto);
+        Room saved = roomRepository.save(room);
+        return RoomMapper.toDTO(saved);
     }
 
     public void deleteRoom(Integer roomNo) {
-        if (!roomRepository.existsById(roomNo)) {
-            throw new RuntimeException("Room not found with number: " + roomNo);
-        }
         roomRepository.deleteById(roomNo);
     }
 
-    public List<Room> getAvailableRooms(String dateStr) {
-        LocalDate date = LocalDate.parse(dateStr);
-
-        List<Room> allRooms = roomRepository.findAll();
-
-        List<Exam> scheduledExams = examRepository.findByDate(date);
-
-        Set<Integer> bookedRoomNos = scheduledExams.stream()
-                .flatMap(exam -> exam.getRooms().stream())
-                .map(Room::getRoomNo)
-                .collect(Collectors.toSet());
-
-        return allRooms.stream()
-                .filter(room -> !bookedRoomNos.contains(room.getRoomNo()))
-                .toList();
+    public List<RoomResponseDTO> getRoomsWithMinCapacity(int minCapacity) {
+        List<Room> rooms = roomRepository.findAvailableRoomsWithMinCapacity(minCapacity);
+        return RoomMapper.toDTOList(rooms);
     }
 
-    public int getTotalCapacity(List<Integer> roomNos) {
-        return roomRepository.findAllByRoomNoIn(roomNos).stream()
-                .mapToInt(Room::getSeatingCapacity)
-                .sum();
+    public int getTotalCapacity(List<Room> rooms) {
+        return rooms.stream().mapToInt(Room::getSeatingCapacity).sum();
     }
 }

@@ -1,17 +1,49 @@
 package com.example.examseatplanner.repository;
 
 import com.example.examseatplanner.model.Room;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface RoomRepository extends JpaRepository<Room,Integer> {
-    Optional<Room> findByRoomNo(Integer roomNo);
+public interface RoomRepository extends JpaRepository<Room, Integer> {
 
-    List<Room> findAllByRoomNoIn(@NotEmpty(message = "Room list must not be empty") List<@NotNull(message = "Room ID cannot be null") Integer> roomNo);
+    /**
+     * Find rooms with minimum capacity
+     */
+    @Query("SELECT r FROM Room r WHERE (r.numRow * r.numColumn * 2) >= :minCapacity")
+    List<Room> findAvailableRoomsWithMinCapacity(@Param("minCapacity") int minCapacity);
+
+    /**
+     * Find rooms by number of rows
+     */
+    List<Room> findByNumRow(int numRow);
+
+    /**
+     * Find rooms by number of columns
+     */
+    List<Room> findByNumColumn(int numColumn);
+
+    /**
+     * Find rooms with exact capacity
+     */
+    @Query("SELECT r FROM Room r WHERE (r.numRow * r.numColumn * 2) = :capacity")
+    List<Room> findByExactCapacity(@Param("capacity") int capacity);
+
+    /**
+     * Find rooms ordered by capacity (descending)
+     */
+    @Query("SELECT r FROM Room r ORDER BY (r.numRow * r.numColumn * 2) DESC")
+    List<Room> findAllOrderByCapacityDesc();
+
+    /**
+     * Get total capacity of all rooms
+     */
+    @Query("SELECT SUM(r.numRow * r.numColumn * 2) FROM Room r")
+    Long getTotalCapacityAllRooms();
+
+
 }
