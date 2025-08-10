@@ -3,6 +3,8 @@ package com.example.examseatplanner.service;
 import com.example.examseatplanner.dto.StudentRequestDTO;
 import com.example.examseatplanner.dto.StudentResponseDTO;
 import com.example.examseatplanner.mapper.StudentMapper;
+import com.example.examseatplanner.model.Exam;
+import com.example.examseatplanner.model.ExamProgramSemester;
 import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ProgramRepository;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,16 @@ public class StudentService {
     public List<StudentResponseDTO> getAllStudents() {
         List<Student> students = studentRepository.findAll();
         return studentMapper.toDTOList(students);
+    }
+
+    public List<Student> getStudentsForExam(Exam exam) {
+        List<Student> allStudents = new ArrayList<>();
+        for (ExamProgramSemester eps : exam.getProgramSemesters()) {
+            List<Student> students = studentRepository
+                    .findByProgramAndSemester(eps.getProgram(), eps.getSemester());
+            allStudents.addAll(students);
+        }
+        return allStudents;
     }
 
     public Optional<Student> getStudentById(String studentId) {

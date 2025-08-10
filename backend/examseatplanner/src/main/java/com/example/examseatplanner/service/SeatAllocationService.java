@@ -14,26 +14,37 @@ public class SeatAllocationService {
 
     private final SeatRepository seatRepository;
     private final StudentService studentService;
-    private final RoomService roomService;
+    private final ExamService examService;
 
     @Autowired
     public SeatAllocationService(SeatRepository seatRepository,
                                  StudentService studentService,
-                                 RoomService roomService) {
+                                 ExamService examService) {
         this.seatRepository = seatRepository;
         this.studentService = studentService;
-        this.roomService = roomService;
+        this.examService = examService;
     }
 
-    public Map<String, List<SeatDTO>> getSeatAssignments(Long examId) {
-        List<Seat> seats = seatRepository.findByExamId(examId);
+    public Map<String, List<SeatDTO>> getSeatAssignments(Integer examId) {
+        // Since Seat has no direct exam relationship, we need to get seats via rooms
+        Optional<Exam> examOpt = examService.getExamById(examId);
+        if (examOpt.isEmpty()) {
+            return new HashMap<>();
+        }
 
-        // Group by room name
-        return seats.stream()
-                .collect(Collectors.groupingBy(
-                        seat -> seat.getRoom().getRoomName(),
-                        Collectors.mapping(SeatDTO::fromEntity, Collectors.toList())
-                ));
+        Exam exam = examOpt.get();
+        Map<String, List<SeatDTO>> result = new HashMap<>();
+
+        for (Room room : exam.getRooms()) {
+            List<Seat> roomSeats = seatRepository.findByRoomRoomNo(room.getRoomNo());
+            List<SeatDTO> seatDTOs = roomSeats.stream()
+                    .filter(seat -> seat.getAssignedStudent() != null) // Only assigned seats
+                    .map(SeatDTO::fromEntity)
+                    .collect(Collectors.toList());
+            result.put(room.getRoomNo().toString(), seatDTOs); // Use roomNo, not roomName
+        }
+
+        return result;
     }
 
     /**
@@ -42,7 +53,8 @@ public class SeatAllocationService {
      */
     public SeatAllocationResult allocateSeatsForExam(Exam exam) {
         // Get all students from exam programs
-        List<Student> allStudents = studentService.getStudentsByPrograms(exam.getPrograms());
+        List<Student> allStudents = studentService.getStudentsForExam(exam);
+
 
         // Calculate total 3D capacity (3 sides per room)
         int totalStudents = allStudents.size();

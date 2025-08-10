@@ -2,6 +2,7 @@ package com.example.examseatplanner.controller;
 
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
+import com.example.examseatplanner.dto.ProgramSemesterDTO;
 import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
@@ -19,6 +20,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/exams")
@@ -51,10 +53,27 @@ public class ExamController {
 
     @PostMapping
     public ResponseEntity<ExamResponseDTO> createExam(@RequestBody @Valid ExamRequestDTO dto) {
-        Exam savedExam = examService.saveFromDto(dto);
+        // ✅ Extract unique program codes
+        List<Integer> programCodes = dto.programSemesters().stream()
+                .map(ProgramSemesterDTO::programCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Program> programs = programService.findAllById(programCodes);
+        if (programs.size() != programCodes.size()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Room> rooms = roomService.findAllById(dto.roomNumbers());
+        if (rooms.size() != dto.roomNumbers().size()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Exam exam = ExamMapper.toEntity(dto, programs, rooms);
+        Exam savedExam = examService.saveExam(exam);
         ExamResponseDTO responseDTO = ExamMapper.toDto(savedExam);
-        return ResponseEntity
-                .created(URI.create("/api/exams/" + savedExam.getId()))
+
+        return ResponseEntity.created(URI.create("/api/exams/" + savedExam.getId()))
                 .body(responseDTO);
     }
 
@@ -66,23 +85,25 @@ public class ExamController {
             return ResponseEntity.notFound().build();
         }
 
-        // Fetch Programs by codes using ProgramService (you may need to add findAllById method in ProgramService)
-        List<Program> programs = programService.findAllById(dto.programCodes());
-        if (programs.size() != dto.programCodes().size()) {
-            return ResponseEntity.badRequest().body(null);
+        // ✅ Extract unique program codes (same as createExam)
+        List<Integer> programCodes = dto.programSemesters().stream()
+                .map(ProgramSemesterDTO::programCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Program> programs = programService.findAllById(programCodes);
+        if (programs.size() != programCodes.size()) {
+            return ResponseEntity.badRequest().build();
         }
 
-        // Fetch Rooms by numbers using RoomService (you may need to add findAllById method in RoomService)
         List<Room> rooms = roomService.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
 
-        // Map DTO to entity using fetched entities
         Exam updatedExam = ExamMapper.toEntity(dto, programs, rooms);
         updatedExam.setId(examId);
 
-        // Save updated exam
         Exam savedExam = examService.saveExam(updatedExam);
         ExamResponseDTO responseDTO = ExamMapper.toDto(savedExam);
 

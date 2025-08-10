@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "exam")
@@ -46,6 +47,20 @@ public class Exam {
         this.date = date;
         this.programSemesters = programSemesters;
         this.rooms = rooms;
+    }
+
+    public List<Program> getPrograms() {
+        return programSemesters.stream()
+                .map(ExamProgramSemester::getProgram)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<Student.Semester> getSemesters() {
+        return programSemesters.stream()
+                .map(ExamProgramSemester::getSemester)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public Integer getId() {

@@ -6,6 +6,6 @@ import java.util.List;
 public record ExamResponseDTO(
         Integer id,
         LocalDate date,
-        List<String> programNames,
+        List<ProgramSemesterResponseDTO> programSemesters,  // ✅ Changed from programNames
         List<String> roomNames
 ) {}

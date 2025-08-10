@@ -81,6 +81,9 @@ public class SeatAllocationDTOService {
     /**
      * Converts seat to DTO
      */
+    /**
+     * Converts seat to DTO
+     */
     private SeatDTO convertSeatToDTO(Seat seat) {
         if (seat == null) {
             return new SeatDTO(null, 0, 0, null);
@@ -94,7 +97,7 @@ public class SeatAllocationDTOService {
                     student.getRoll(),
                     student.getProgram().getProgramCode(),
                     student.getProgram().getProgramName(),
-                    student.getSemester().toString()
+                    student.getSemester().toString()  // Only 4 parameters
             );
         }
 

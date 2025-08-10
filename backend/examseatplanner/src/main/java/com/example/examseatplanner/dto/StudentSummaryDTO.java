@@ -6,6 +6,7 @@ public record StudentSummaryDTO(
         Integer studentId,
         int roll,
         Integer programCode,
+        String programName,
         String semester
 ) {
     public static StudentSummaryDTO fromEntity(Student student) {
@@ -13,6 +14,7 @@ public record StudentSummaryDTO(
                 student.getStudentId(),
                 student.getRoll(),
                 student.getProgram() != null ? student.getProgram().getProgramCode() : null,
+                student.getProgram() != null ? student.getProgram().getProgramName() : null, // ✅ Add this
                 student.getSemester() != null ? student.getSemester().name() : null
         );
     }
