@@ -1,11 +1,13 @@
-import Sidebar from "@/components/ui/Sidebar";
 import AppRoutes from "@/routes/AppRoutes";
+import NavBar from "@/components/NavBar";
 
 function App() {
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 p-6">
+    <div className="flex flex-col p-6 justify-center items-center gap-10">
+      <div className="flex items-center justify-center">
+        <NavBar />
+      </div>
+      <div className="">
         <AppRoutes />
       </div>
     </div>
