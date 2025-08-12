@@ -1,5 +1,6 @@
 package com.example.examseatplanner.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,13 +16,13 @@ public class Exam {
     @Column(name = "exam_id")
     private Integer id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "semester")
-    private Student.Semester semester;
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "semester")
+//    private Student.Semester semester;
 
-    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<ExamProgramSemester> programSemesters = new ArrayList<>();
-
 
     @Column(name = "exam_date")
     private LocalDate date;
@@ -29,6 +30,7 @@ public class Exam {
     @ManyToMany
     @JoinTable(
             name = "exam_rooms",
+
             joinColumns = @JoinColumn(name = "exam_id"),
             inverseJoinColumns = @JoinColumn(name = "room_no")
     )
@@ -38,16 +40,15 @@ public class Exam {
     }
 
     public Exam(Integer id,
-                Student.Semester semester,
-                LocalDate date,
                 List<ExamProgramSemester> programSemesters,
+                LocalDate date,
                 List<Room> rooms) {
         this.id = id;
-        this.semester = semester;
-        this.date = date;
         this.programSemesters = programSemesters;
+        this.date = date;
         this.rooms = rooms;
     }
+
 
     public List<Program> getPrograms() {
         return programSemesters.stream()
@@ -99,19 +100,18 @@ public class Exam {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Exam exam = (Exam) o;
-        return Objects.equals(id, exam.id) && semester == exam.semester && Objects.equals(programSemesters, exam.programSemesters) && Objects.equals(date, exam.date) && Objects.equals(rooms, exam.rooms);
+        return Objects.equals(id, exam.id) && Objects.equals(programSemesters, exam.programSemesters) && Objects.equals(date, exam.date) && Objects.equals(rooms, exam.rooms);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, semester, programSemesters, date, rooms);
+        return Objects.hash(id, programSemesters, date, rooms);
     }
 
     @Override
     public String toString() {
         return "Exam{" +
                 "id=" + id +
-                ", semester=" + semester +
                 ", programSemesters=" + programSemesters +
                 ", date=" + date +
                 ", rooms=" + rooms +

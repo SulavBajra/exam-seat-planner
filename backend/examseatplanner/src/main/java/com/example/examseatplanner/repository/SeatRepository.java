@@ -19,9 +19,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
      */
     List<Seat> findByRoomRoomNo(Integer roomNo);
 
-    List<Seat> findByRoomId(Long roomId);
-    List<Seat> findByExamId(Long examId);
-
     /**
      * Find all seats assigned to a specific student
      */

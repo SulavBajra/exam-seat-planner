@@ -45,6 +45,20 @@ public class StudentController {
         return studentService.createStudent(request);
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<?> createStudentsBulk(@RequestBody List<StudentRequestDTO> students) {
+        try {
+            for (StudentRequestDTO dto : students) {
+                studentService.createStudent(dto);
+            }
+            return ResponseEntity.ok().body("Successfully uploaded " + students.size() + " students.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload students: " + e.getMessage());
+        }
+    }
+
+
     @PutMapping("/{studentId}")
     public ResponseEntity<StudentResponseDTO> updateStudent(@PathVariable String studentId,
                                                             @RequestBody @Valid StudentRequestDTO dto) {

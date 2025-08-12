@@ -14,7 +14,7 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     /**
      * Find rooms with minimum capacity
      */
-    @Query("SELECT r FROM Room r WHERE (r.numRow * r.numColumn * 2) >= :minCapacity")
+    @Query("SELECT r FROM Room r WHERE (r.numRow * 3* 2) >= :minCapacity")
     List<Room> findAvailableRoomsWithMinCapacity(@Param("minCapacity") int minCapacity);
 
     /**
@@ -22,27 +22,23 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
      */
     List<Room> findByNumRow(int numRow);
 
-    /**
-     * Find rooms by number of columns
-     */
-    List<Room> findByNumColumn(int numColumn);
 
     /**
      * Find rooms with exact capacity
      */
-    @Query("SELECT r FROM Room r WHERE (r.numRow * r.numColumn * 2) = :capacity")
+    @Query("SELECT r FROM Room r WHERE (r.numRow * 3 * 2) = :capacity")
     List<Room> findByExactCapacity(@Param("capacity") int capacity);
 
     /**
      * Find rooms ordered by capacity (descending)
      */
-    @Query("SELECT r FROM Room r ORDER BY (r.numRow * r.numColumn * 2) DESC")
+    @Query("SELECT r FROM Room r ORDER BY (r.numRow * 3 * 2) DESC")
     List<Room> findAllOrderByCapacityDesc();
 
     /**
      * Get total capacity of all rooms
      */
-    @Query("SELECT SUM(r.numRow * r.numColumn * 2) FROM Room r")
+    @Query("SELECT SUM(r.numRow * 3 * 2) FROM Room r")
     Long getTotalCapacityAllRooms();
 
 

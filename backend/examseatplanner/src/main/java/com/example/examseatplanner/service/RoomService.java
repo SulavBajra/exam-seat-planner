@@ -6,6 +6,7 @@ import com.example.examseatplanner.mapper.RoomMapper;
 import com.example.examseatplanner.model.Room;
 import com.example.examseatplanner.model.Seat;
 import com.example.examseatplanner.repository.RoomRepository;
+import com.example.examseatplanner.repository.SeatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ public class RoomService {
     private final RoomRepository roomRepository;
 
     @Autowired
-    public RoomService(RoomRepository roomRepository) {
+    public RoomService(RoomRepository roomRepository){
         this.roomRepository = roomRepository;
     }
 

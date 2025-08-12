@@ -42,12 +42,27 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         System.out.println("🚀 Starting Data Initialization with 3D Seat Allocation...");
 
+        // Check if data already exists to avoid duplicates
+        if (programRepository.count() > 0) {
+            System.out.println("📊 Data already exists, skipping initialization...");
+            return;
+        }
+
         // 1. Create Rooms and explain capacity
-        Room room101 = createRoom(101, 2, 3); // 2 rows, 3 columns
-        Room room102 = createRoom(102, 3, 2); // 3 rows, 2 columns
-        Room room103 = createRoom(103, 1, 4); // 1 row, 4 columns
+        Room room101 = createRoom(101, 4); // 2 rows, 3 columns
+//        room101.createRoom();
+        Room room102 = createRoom(102, 3); // 3 rows, 2 columns
+//        room102.createRoom();
+        Room room103 = createRoom(103, 2); // 1 row, 4 columns
+//        room103.createRoom();
+
+//        List<Seat> seats = room101.getSeats();
+//        for (Seat seat : seats) {
+//            System.out.println(seat);
+//        }
 
         List<Room> rooms = roomRepository.saveAll(List.of(room101, room102, room103));
+
 
         System.out.println("🏢 Room Capacity Breakdown:");
         for (Room room : rooms) {
@@ -66,26 +81,28 @@ public class DataInitializer implements CommandLineRunner {
         // 2. Create Programs
         Program bim = new Program("Bachelor in Information Management", 1001);
         Program bba = new Program("Bachelor in Business Administration", 1002);
-        Program bscs = new Program("Bachelor in Computer Science", 1003);
-        Program bit = new Program("Bachelor in Information Technology", 1004);
+       Program bscs = new Program("Bachelor in Computer Science", 1003);
+       // Program bit = new Program("Bachelor in Information Technology", 1004);
 
-        List<Program> programs = programRepository.saveAll(List.of(bim, bba, bscs, bit));
+        List<Program> programs = programRepository.saveAll(List.of(bim, bba, bscs/*, bit*/));
         System.out.printf("✅ Created %d programs%n", programs.size());
 
         // 3. Create Students (reduce numbers to fit capacity)
         List<Student> allStudents = new ArrayList<>();
 
-        // BIM students (6 students)
-        allStudents.addAll(createStudents(bim, 6, Student.Semester.THIRD));
+        // BIM students (6 students) - THIRD semester
+        allStudents.addAll(createStudents(bim, 10, Student.Semester.THIRD));
+        allStudents.addAll(createStudents(bim, 10, Student.Semester.FIRST));
 
-        // BBA students (5 students)
-        allStudents.addAll(createStudents(bba, 5, Student.Semester.THIRD));
 
-        // BSCS students (4 students)
-        allStudents.addAll(createStudents(bscs, 4, Student.Semester.THIRD));
+        // BBA students (5 students) - THIRD semester
+        allStudents.addAll(createStudents(bba, 10, Student.Semester.THIRD));
 
-        // BIT students (3 students)
-        allStudents.addAll(createStudents(bit, 3, Student.Semester.THIRD));
+        // BSCS students (4 students) - THIRD semester
+        allStudents.addAll(createStudents(bscs, 10, Student.Semester.THIRD));
+
+        // BIT students (3 students) - THIRD semester
+      //  allStudents.addAll(createStudents(bit, 3, Student.Semester.THIRD));
 
         studentRepository.saveAll(allStudents);
         System.out.printf("✅ Created %d students across all programs%n", allStudents.size());
@@ -101,14 +118,31 @@ public class DataInitializer implements CommandLineRunner {
             System.out.printf("   Capacity needed: %d, Available: %d%n", allStudents.size(), selectedRoomCapacity);
         }
 
-        // 4. Create Exam
+        // 4. Create Exam with proper ExamProgramSemester relationships
         Exam exam = new Exam();
         exam.setDate(LocalDate.now().plusDays(7));
-        exam.setPrograms(programs);
         exam.setRooms(Arrays.asList(room101)); // Use just room101 for this small exam
 
+        // Create ExamProgramSemester entities for each program
+        List<ExamProgramSemester> programSemesters = new ArrayList<>();
+
+        // Add all programs with THIRD semester
+        for (Program program : programs) {
+            ExamProgramSemester eps = new ExamProgramSemester(exam, program, Student.Semester.THIRD);
+
+            programSemesters.add(eps);
+        }
+
+//        for (Program program : programs) {
+//            ExamProgramSemester eps = new ExamProgramSemester(exam, program, Student.Semester.FIRST);
+//            programSemesters.add(eps);
+//        }
+
+        exam.setProgramSemesters(programSemesters);
         exam = examRepository.save(exam);
+
         System.out.printf("✅ Created exam for date: %s%n", exam.getDate());
+        System.out.printf("📚 Programs in exam: %d%n", exam.getProgramSemesters().size());
         System.out.printf("🏢 Using room %d with capacity: %d × 3 sides = %d total seats%n",
                 room101.getRoomNo(), room101.getSeatingCapacity(), room101.getSeatingCapacity() * 3);
 
@@ -136,11 +170,10 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("\n🎉 Data initialization completed successfully!");
     }
 
-    private Room createRoom(Integer roomNo, int numRows, int numColumns) {
+    private Room createRoom(Integer roomNo, int numRows) {
         Room room = new Room();
         room.setRoomNo(roomNo);
         room.setNumRow(numRows);
-        room.setNumColumn(numColumns);
         return room;
     }
 
@@ -157,9 +190,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void displayAllocationResults(Exam exam) {
-        System.out.println("\n" + "=".repeat(60));
+        System.out.println("\n" + "=".repeat(80));
         System.out.println("📋 SEAT ALLOCATION RESULTS");
-        System.out.println("=".repeat(60));
+        System.out.println("=".repeat(80));
 
         Map<Room, Seat[][][]> seatingChart = seatAllocationService.getSeatingChart(exam);
 
@@ -169,7 +202,7 @@ public class DataInitializer implements CommandLineRunner {
 
             System.out.printf("\n🏢 ROOM %d Layout (%d rows × %d columns)%n",
                     room.getRoomNo(), room.getNumRow(), room.getNumColumn());
-            System.out.println("-".repeat(50));
+            System.out.println("-".repeat(80));
 
             displayRoomLayout(room, seats);
         }
@@ -177,10 +210,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private void displayRoomLayout(Room room, Seat[][][] seats) {
         String[] sideNames = {"LEFT", "MIDDLE", "RIGHT"};
+        String[] sideIcons = {"🟦", "🟩", "🟨"};
+
+
 
         for (int side = 0; side < 3; side++) {
-            System.out.printf("\n%s SECTION:%n", sideNames[side]);
-            System.out.println("┌" + "─".repeat(48) + "┐");
+            System.out.printf("\n%s %s SECTION:%n", sideIcons[side], sideNames[side]);
+            System.out.println("┌" + "─".repeat(78) + "┐");
 
             for (int row = 0; row < room.getNumRow(); row++) {
                 System.out.printf("│ Row %d: ", row + 1);
@@ -190,13 +226,19 @@ public class DataInitializer implements CommandLineRunner {
 
                     for (int position = 0; position < Room.SEATS_PER_BENCH; position++) {
                         int seatIndex = bench * Room.SEATS_PER_BENCH + position;
-                        Seat seat = seats[side][row][seatIndex];
 
-                        if (seat != null && seat.getAssignedStudent() != null) {
-                            Student student = seat.getAssignedStudent();
-                            System.out.printf("%s%02d",
-                                    getProgramAbbreviation(student.getProgram().getProgramName()),
-                                    student.getRoll());
+                        if (seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH &&
+                                seats[side][row][seatIndex] != null) {
+
+                            Seat seat = seats[side][row][seatIndex];
+                            if (seat.getAssignedStudent() != null) {
+                                Student student = seat.getAssignedStudent();
+                                System.out.printf("%s%02d",
+                                        getProgramAbbreviation(student.getProgram().getProgramName()),
+                                        student.getRoll());
+                            } else {
+                                System.out.print("----");
+                            }
                         } else {
                             System.out.print("----");
                         }
@@ -209,10 +251,17 @@ public class DataInitializer implements CommandLineRunner {
                     System.out.print("] ");
                 }
 
-                System.out.printf("%n");
+                // Fill remaining space for alignment
+                int usedLength = String.format("│ Row %d: ", row + 1).length() +
+                        (room.getNumColumn() * (Room.SEATS_PER_BENCH * 4 + 1 + 2)); // brackets and separators
+                int padding = 77 - usedLength;
+                if (padding > 0) {
+                    System.out.print(" ".repeat(padding));
+                }
+                System.out.println("│");
             }
 
-            System.out.println("└" + "─".repeat(48) + "┘");
+            System.out.println("└" + "─".repeat(78) + "┘");
         }
     }
 
@@ -225,9 +274,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void validateAndDisplayResults(Exam exam) {
-        System.out.println("\n" + "=".repeat(60));
+        System.out.println("\n" + "=".repeat(80));
         System.out.println("✅ VALIDATION RESULTS");
-        System.out.println("=".repeat(60));
+        System.out.println("=".repeat(80));
 
         List<String> violations = seatAllocationService.validateSeatAllocation(exam);
 
@@ -244,36 +293,67 @@ public class DataInitializer implements CommandLineRunner {
         Map<String, Object> statistics = dtoService.generateAllocationStatistics(seatingChart, violations);
 
         System.out.println("\n📊 ALLOCATION STATISTICS:");
-        System.out.println("-".repeat(30));
-        statistics.forEach((key, value) -> {
-            String displayKey = formatStatKey(key);
-            if (value instanceof Double) {
-                System.out.printf("%-20s: %.2f%n", displayKey, value);
-            } else {
-                System.out.printf("%-20s: %s%n", displayKey, value);
+        System.out.println("-".repeat(50));
+
+        // Display basic statistics
+        System.out.printf("%-25s: %s%n", "Total Rooms", statistics.get("totalRooms"));
+        System.out.printf("%-25s: %s%n", "Total Seats", statistics.get("totalSeats"));
+        System.out.printf("%-25s: %s%n", "Occupied Seats", statistics.get("occupiedSeats"));
+        System.out.printf("%-25s: %s%n", "Available Seats", statistics.get("availableSeats"));
+        System.out.printf("%-25s: %.2f%%%n", "Occupancy Rate", statistics.get("occupancyRate"));
+        System.out.printf("%-25s: %s%n", "Violations", statistics.get("violationCount"));
+        System.out.printf("%-25s: %s%n", "Valid Allocation", statistics.get("isValidAllocation"));
+
+        // Display program distribution
+        @SuppressWarnings("unchecked")
+        Map<Integer, Integer> distribution = (Map<Integer, Integer>) statistics.get("programDistribution");
+        if (distribution != null && !distribution.isEmpty()) {
+            System.out.println("\n👥 PROGRAM DISTRIBUTION:");
+            System.out.println("-".repeat(30));
+            distribution.forEach((programCode, count) -> {
+                Program program = programRepository.findById(programCode).orElse(null);
+                String programName = program != null ? getProgramAbbreviation(program.getProgramName()) : "Unknown";
+                System.out.printf("  %s (Code %d): %d students%n", programName, programCode, count);
+            });
+        }
+
+        // Display seat distribution by section
+        displaySeatDistributionBySections(exam);
+    }
+
+    private void displaySeatDistributionBySections(Exam exam) {
+        System.out.println("\n🏢 SEAT DISTRIBUTION BY SECTIONS:");
+        System.out.println("-".repeat(50));
+
+        Map<Room, Seat[][][]> seatingChart = seatAllocationService.getSeatingChart(exam);
+        String[] sectionNames = {"LEFT", "MIDDLE", "RIGHT"};
+        String[] sectionIcons = {"🟦", "🟩", "🟨"};
+
+        for (Map.Entry<Room, Seat[][][]> entry : seatingChart.entrySet()) {
+            Room room = entry.getKey();
+            Seat[][][] seats = entry.getValue();
+
+            System.out.printf("\nRoom %d:%n", room.getRoomNo());
+
+            for (int side = 0; side < 3; side++) {
+                int occupiedInSection = 0;
+                int totalInSection = room.getNumRow() * room.getNumColumn() * Room.SEATS_PER_BENCH;
+
+                // Count occupied seats in this section
+                for (int row = 0; row < room.getNumRow(); row++) {
+                    for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
+                        if (seats[side][row][seatIndex] != null &&
+                                seats[side][row][seatIndex].getAssignedStudent() != null) {
+                            occupiedInSection++;
+                        }
+                    }
+                }
+
+                System.out.printf("  %s %-8s: %2d/%2d seats (%.1f%%)%n",
+                        sectionIcons[side], sectionNames[side],
+                        occupiedInSection, totalInSection,
+                        totalInSection > 0 ? (double) occupiedInSection / totalInSection * 100 : 0);
             }
-        });
-    }
-
-    private String formatStatKey(String key) {
-        return switch (key) {
-            case "totalRooms" -> "Total Rooms";
-            case "totalSeats" -> "Total Seats";
-            case "occupiedSeats" -> "Occupied Seats";
-            case "availableSeats" -> "Available Seats";
-            case "occupancyRate" -> "Occupancy Rate (%)";
-            case "programDistribution" -> "Program Distribution";
-            case "violationCount" -> "Violations";
-            case "isValidAllocation" -> "Valid Allocation";
-            default -> key;
-        };
-    }
-
-    // Helper method to display program distribution
-    private void displayProgramDistribution(Map<Integer, Integer> distribution) {
-        System.out.println("\n👥 PROGRAM DISTRIBUTION:");
-        distribution.forEach((programCode, count) -> {
-            System.out.printf("  Program %d: %d students%n", programCode, count);
-        });
+        }
     }
 }

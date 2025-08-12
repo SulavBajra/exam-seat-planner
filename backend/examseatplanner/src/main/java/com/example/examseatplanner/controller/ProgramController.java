@@ -68,4 +68,9 @@ public class ProgramController {
     public List<ProgramResponseDTO> searchPrograms(@RequestParam String name) {
         return programService.searchProgramsByName(name);
     }
+
+    @GetMapping("/search/code")
+    public List<Integer> getProgramCodeByProgramName(@RequestParam String name){
+        return  programService.getProgramCodeByProgramName(name);
+    }
 }

@@ -35,7 +35,7 @@ public class SeatAllocationController {
     }
 
     @GetMapping("/assignments/{examId}")
-    public ResponseEntity<Map<String, List<SeatDTO>>> getAssignments(@PathVariable Long examId) {
+    public ResponseEntity<Map<String, List<SeatDTO>>> getAssignments(@PathVariable Integer examId) {
         Map<String, List<SeatDTO>> assignments = seatAllocationService.getSeatAssignments(examId);
         return ResponseEntity.ok(assignments);
     }

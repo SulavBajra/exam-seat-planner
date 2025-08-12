@@ -5,10 +5,13 @@ import com.example.examseatplanner.dto.ProgramResponseDTO;
 import com.example.examseatplanner.mapper.ProgramMapper;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ProgramRepository;
+import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -49,4 +52,21 @@ public class ProgramService {
         List<Program> programs = programRepository.findByProgramNameContainingIgnoreCase(name);
         return ProgramMapper.toDTOList(programs);
     }
+
+    public List<Integer> getProgramCodeByProgramName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
+        }
+
+        List<ProgramResponseDTO> programs = searchProgramsByName(name);
+        if (programs == null) {
+            return Collections.emptyList();
+        }
+
+        return programs.stream()
+                .map(ProgramResponseDTO::programCode)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
 }

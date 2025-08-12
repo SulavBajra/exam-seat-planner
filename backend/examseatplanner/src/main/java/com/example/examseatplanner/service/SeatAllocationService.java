@@ -26,7 +26,6 @@ public class SeatAllocationService {
     }
 
     public Map<String, List<SeatDTO>> getSeatAssignments(Integer examId) {
-        // Since Seat has no direct exam relationship, we need to get seats via rooms
         Optional<Exam> examOpt = examService.getExamById(examId);
         if (examOpt.isEmpty()) {
             return new HashMap<>();

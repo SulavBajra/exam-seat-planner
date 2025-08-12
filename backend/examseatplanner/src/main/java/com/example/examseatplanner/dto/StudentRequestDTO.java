@@ -3,8 +3,8 @@ package com.example.examseatplanner.dto;
 import jakarta.validation.constraints.*;
 
 public record StudentRequestDTO(
-
         @NotNull(message = "Program code is required")
+        @Positive(message = "Program code must be positive")
         Integer programCode,
 
         @NotNull(message = "Semester is required")
@@ -15,5 +15,4 @@ public record StudentRequestDTO(
         @NotNull(message = "Roll number is required")
         @Positive(message = "Roll number must be positive")
         Integer roll
-
 ) {}

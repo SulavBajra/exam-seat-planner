@@ -9,9 +9,8 @@ import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.StudentRepository;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import jakarta.transaction.Transactional;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,11 +53,13 @@ public class StudentService {
 
     public List<Student> getStudentsForExam(Exam exam) {
         List<Student> allStudents = new ArrayList<>();
+
         for (ExamProgramSemester eps : exam.getProgramSemesters()) {
             List<Student> students = studentRepository
                     .findByProgramAndSemester(eps.getProgram(), eps.getSemester());
             allStudents.addAll(students);
         }
+
         return allStudents;
     }
 
@@ -68,10 +69,6 @@ public class StudentService {
 
     public Student saveStudent(Student student) {
         return studentRepository.save(student);
-    }
-
-    public String generateStudentId(String enrolledYear, Integer programCode, int semester, int roll) {
-        return String.format("%s%02d%02d%03d", enrolledYear, programCode, semester, roll);
     }
 
     public void deleteStudent(String studentId) {
@@ -105,28 +102,42 @@ public class StudentService {
     }
 
 
+    @Transactional
     public void importStudentsFromExcel(MultipartFile file) throws IOException {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // skip header
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // Skip header
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String enrolledYear = String.valueOf((int) row.getCell(0).getNumericCellValue());
-                int programCode = (int) row.getCell(1).getNumericCellValue();
-                int semester = (int) row.getCell(2).getNumericCellValue();
-                int roll = (int) row.getCell(3).getNumericCellValue();
+                try {
+                    String programName = row.getCell(0).getStringCellValue().trim();
+                    int semester = (int) row.getCell(1).getNumericCellValue();
+                    int roll = (int) row.getCell(2).getNumericCellValue();
 
-                Program program = programRepository.findById(programCode)
-                        .orElseThrow(() -> new RuntimeException("Program not found: " + programCode));
+                    Program program = programRepository.findByProgramName(programName)
+                            .orElseThrow(() -> new RuntimeException("Program not found: " + programName));
 
-                StudentRequestDTO dto = new StudentRequestDTO(programCode, semester, roll);
-                Student student = studentMapper.toEntity(dto, program);
-                studentRepository.save(student);
+                    Student.Semester semesterEnum = Student.Semester.values()[semester - 1];
+
+                    boolean exists = studentRepository.existsByRollAndProgramAndSemester(roll, program, semesterEnum);
+                    if (exists) {
+                        continue;  // skip duplicates
+                    }
+
+                    StudentRequestDTO dto = new StudentRequestDTO(program.getProgramCode(), semester, roll);
+                    createStudent(dto);  // saves student immediately
+
+                } catch (Exception e) {
+                    System.err.printf("Error importing row %d: %s%n", i + 1, e.getMessage());
+                    // Decide whether to continue or abort import on error
+                }
             }
         }
     }
+
+
 
     public StudentResponseDTO convertToDTO(Student student) {
         return studentMapper.toDTO(student);

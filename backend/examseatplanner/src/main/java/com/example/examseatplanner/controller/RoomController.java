@@ -44,7 +44,7 @@ public class RoomController {
             return ResponseEntity.notFound().build();
         }
         // Set correct ID before updating
-        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow(), dto.numColumn());
+        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow());
         RoomResponseDTO updatedRoom = roomService.saveRoom(dto);
         return ResponseEntity.ok(updatedRoom);
     }

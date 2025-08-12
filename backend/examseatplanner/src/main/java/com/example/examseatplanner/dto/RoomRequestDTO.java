@@ -10,8 +10,5 @@ public record RoomRequestDTO(
         int seatingCapacity,
 
         @Min(value = 1, message = "Number of rows must be at least 1")
-        int numRow,
-
-        @Min(value = 1, message = "Number of columns must be at least 1")
-        int numColumn
+        int numRow
 ) {}

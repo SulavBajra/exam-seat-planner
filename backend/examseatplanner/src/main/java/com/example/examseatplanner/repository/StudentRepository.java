@@ -65,6 +65,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
      */
     long countBySemester(Student.Semester semester);
 
+//    boolean existsByProgramAndSemesterAndRoll(Program program, int semester, int roll);
     /**
      * Find students with roll numbers in range
      */

@@ -6,6 +6,7 @@ import com.example.examseatplanner.model.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExamMapper {
@@ -18,13 +19,20 @@ public class ExamMapper {
         // ✅ Create ExamProgramSemester entities
         List<ExamProgramSemester> programSemesters = new ArrayList<>();
 
-        for (ProgramSemesterDTO psDto : dto.programSemesters()) {
-            Program program = programs.stream()
-                    .filter(p -> p.getProgramCode().equals(psDto.programCode()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Program not found: " + psDto.programCode()));
+            Map<Integer, Program> programMap = programs.stream()
+                    .collect(Collectors.toMap(Program::getProgramCode, p -> p));
 
-            Student.Semester semester = Student.Semester.values()[psDto.semester() - 1];
+            for (ProgramSemesterDTO psDto : dto.programSemesters()) {
+                Program program = programMap.get(psDto.programCode());
+                if (program == null) {
+                    throw new IllegalArgumentException("Program not found: " + psDto.programCode());
+                }
+            int semValue = psDto.semester();
+            if (semValue < 1 || semValue > Student.Semester.values().length) {
+                throw new IllegalArgumentException("Invalid semester: " + semValue);
+            }
+            Student.Semester semester = Student.Semester.values()[semValue - 1];
+
 
             ExamProgramSemester eps = new ExamProgramSemester(exam, program, semester);
             programSemesters.add(eps);

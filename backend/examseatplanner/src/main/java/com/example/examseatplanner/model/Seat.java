@@ -1,5 +1,6 @@
 package com.example.examseatplanner.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -16,7 +17,9 @@ public class Seat {
 
     @ManyToOne
     @JoinColumn(name = "room_no")
+    @JsonBackReference
     private Room room;
+
 
     @ManyToOne
     @JoinColumn(name = "student_id")

@@ -1,5 +1,6 @@
 package com.example.examseatplanner.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -13,8 +14,10 @@ public class ExamProgramSemester {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "exam_id", nullable = false)
+    @JoinColumn(name = "exam_id")
+    @JsonBackReference
     private Exam exam;
+
 
     @ManyToOne
     @JoinColumn(name = "program_code", nullable = false)

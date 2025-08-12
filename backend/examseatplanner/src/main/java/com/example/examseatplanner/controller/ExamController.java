@@ -1,15 +1,11 @@
 package com.example.examseatplanner.controller;
 
+import com.example.examseatplanner.dto.BulkExamRequestDTO;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
-import com.example.examseatplanner.dto.ProgramSemesterDTO;
-import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
-import com.example.examseatplanner.model.Program;
-import com.example.examseatplanner.model.Room;
+import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.service.ExamService;
-import com.example.examseatplanner.service.ProgramService;
-import com.example.examseatplanner.service.RoomService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,25 +14,22 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/exams")
 public class ExamController {
 
     private final ExamService examService;
-    private final ProgramService programService;
-    private final RoomService roomService;  // Inject this for room lookup
+    private final ExamRepository examRepository;
 
     @Autowired
     public ExamController(ExamService examService,
-                          ProgramService programService,
-                          RoomService roomService) {
+                          ExamRepository examRepository) {
         this.examService = examService;
-        this.programService = programService;
-        this.roomService = roomService;
+        this.examRepository = examRepository;
     }
 
     @GetMapping
@@ -46,77 +39,68 @@ public class ExamController {
 
     @GetMapping("/{examId}")
     public ResponseEntity<Exam> getExamById(@PathVariable Integer examId) {
-        Optional<Exam> exam = examService.getExamById(examId);
-        return exam.map(ResponseEntity::ok)
+        return examService.getExamById(examId)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/rooms/{examId}")
+    public ResponseEntity<List<Integer>> getRoomNoByExamId(@PathVariable Integer examId) {
+        List<Integer> roomNumbers = examRepository.findRoomNumbersByExamId(examId);
+        if (roomNumbers.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(roomNumbers);
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ExamResponseDTO>> createBulkExams(
+            @Valid @RequestBody BulkExamRequestDTO request) {
+
+        List<ExamResponseDTO> createdExams = new ArrayList<>();
+
+        for (ExamRequestDTO exam : request.exams()) {
+            try {
+                ExamResponseDTO responseDTO = examService.createExamFromDto(exam);
+                createdExams.add(responseDTO);
+            } catch (IllegalArgumentException e) {
+               e.printStackTrace();
+            }
+        }
+
+        return ResponseEntity.ok(createdExams);
+    }
+
+
+
     @PostMapping
     public ResponseEntity<ExamResponseDTO> createExam(@RequestBody @Valid ExamRequestDTO dto) {
-        // ✅ Extract unique program codes
-        List<Integer> programCodes = dto.programSemesters().stream()
-                .map(ProgramSemesterDTO::programCode)
-                .distinct()
-                .collect(Collectors.toList());
-
-        List<Program> programs = programService.findAllById(programCodes);
-        if (programs.size() != programCodes.size()) {
-            return ResponseEntity.badRequest().build();
+        try {
+            ExamResponseDTO responseDTO = examService.createExamFromDto(dto);
+            return ResponseEntity.created(URI.create("/api/exams/" + responseDTO.id()))
+                    .body(responseDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
         }
-
-        List<Room> rooms = roomService.findAllById(dto.roomNumbers());
-        if (rooms.size() != dto.roomNumbers().size()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        Exam exam = ExamMapper.toEntity(dto, programs, rooms);
-        Exam savedExam = examService.saveExam(exam);
-        ExamResponseDTO responseDTO = ExamMapper.toDto(savedExam);
-
-        return ResponseEntity.created(URI.create("/api/exams/" + savedExam.getId()))
-                .body(responseDTO);
     }
 
     @PutMapping("/{examId}")
     public ResponseEntity<ExamResponseDTO> updateExam(@PathVariable Integer examId,
                                                       @RequestBody @Valid ExamRequestDTO dto) {
-        Optional<Exam> existingExamOpt = examService.getExamById(examId);
-        if (existingExamOpt.isEmpty()) {
+        try {
+            ExamResponseDTO responseDTO = examService.updateExamFromDto(examId, dto);
+            return ResponseEntity.ok(responseDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
-
-        // ✅ Extract unique program codes (same as createExam)
-        List<Integer> programCodes = dto.programSemesters().stream()
-                .map(ProgramSemesterDTO::programCode)
-                .distinct()
-                .collect(Collectors.toList());
-
-        List<Program> programs = programService.findAllById(programCodes);
-        if (programs.size() != programCodes.size()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<Room> rooms = roomService.findAllById(dto.roomNumbers());
-        if (rooms.size() != dto.roomNumbers().size()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        Exam updatedExam = ExamMapper.toEntity(dto, programs, rooms);
-        updatedExam.setId(examId);
-
-        Exam savedExam = examService.saveExam(updatedExam);
-        ExamResponseDTO responseDTO = ExamMapper.toDto(savedExam);
-
-        return ResponseEntity.ok(responseDTO);
     }
 
     @DeleteMapping("/{examId}")
     public ResponseEntity<Void> deleteExam(@PathVariable Integer examId) {
-        if (examService.getExamById(examId).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        examService.deleteExam(examId);
-        return ResponseEntity.noContent().build();
+        boolean deleted = examService.deleteExam(examId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/date/{date}")

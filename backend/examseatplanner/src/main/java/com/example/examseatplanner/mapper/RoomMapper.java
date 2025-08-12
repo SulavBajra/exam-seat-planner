@@ -11,7 +11,6 @@ public class RoomMapper {
     public static Room toEntity(RoomRequestDTO dto) {
         return new Room(
                 dto.roomNo(),
-                dto.numColumn(),
                 dto.numRow()
         );
     }
