@@ -2,15 +2,38 @@ import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Download, Upload, Check, X, FileText, Users } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function Student() {
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [validationResults, setValidationResults] = useState([]);
   const [fileInfo, setFileInfo] = useState(null);
 
-  // Helper function to validate numeric range
   const validateRange = (value, min, max) => {
     const num = Number(value);
     return !isNaN(num) && num >= min && num <= max;
@@ -81,8 +104,11 @@ export default function Student() {
   const processExcelData = async (jsonData) => {
     const processedData = [];
     let hasErrors = false;
+    const totalRecords = jsonData.length;
 
     for (const [index, student] of jsonData.entries()) {
+      setUploadProgress(Math.floor((index / totalRecords) * 100));
+
       const validation = validateStudentData(student);
       const programCode = validation.isValid
         ? await getProgramCode(student.Program)
@@ -90,7 +116,7 @@ export default function Student() {
 
       const result = {
         ...student,
-        rowNumber: index + 2, // +2 for header row and 1-based index
+        rowNumber: index + 2,
         programCode,
         isValid: validation.isValid && programCode !== null,
         errors: validation.errors,
@@ -108,6 +134,7 @@ export default function Student() {
     if (!file) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
     setMessage({ text: "", type: "" });
     setValidationResults([]);
     setFileInfo({
@@ -161,142 +188,225 @@ export default function Student() {
         text: `Successfully uploaded ${uploadData.length} students!`,
         type: "success",
       });
+      toast.success(`Uploaded ${uploadData.length} students successfully`);
     } catch (error) {
       console.error("Upload error:", error);
       setMessage({
         text: error.message || "Failed to process file",
         type: "error",
       });
+      toast.error(error.message || "Failed to process file");
     } finally {
       setIsUploading(false);
+      setUploadProgress(100);
+      setTimeout(() => setUploadProgress(0), 2000);
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4 p-4 max-w-5xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Student Data Management</h2>
+  const validCount = validationResults.filter((r) => r.isValid).length;
+  const invalidCount = validationResults.length - validCount;
 
-      {fileInfo && (
-        <div className="p-3 bg-blue-50 rounded-md">
-          <p>
-            <strong>File:</strong> {fileInfo.name}
-          </p>
-          <p>
-            <strong>Size:</strong> {fileInfo.size}
-          </p>
-          <p>
-            <strong>Last Modified:</strong> {fileInfo.lastModified}
+  return (
+    <div className="flex flex-col gap-4 p-4 max-w-7xl mx-auto h-full">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            Student Management
+          </h1>
+          <p className="text-muted-foreground">
+            Upload and manage student records in bulk
           </p>
         </div>
-      )}
-
-      <div className="flex gap-4">
         <Button
           variant="outline"
-          onClick={handleDownloadTemplate}
-          disabled={isUploading}
+          className="gap-2"
+          onClick={() => navigate("/studentList")}
         >
-          Download Excel Template
-        </Button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleUploadExcel}
-          className="hidden"
-          disabled={isUploading}
-        />
-        <Button
-          variant="outline"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
-          {isUploading ? "Uploading..." : "Upload Excel"}
+          View Student List
         </Button>
       </div>
 
-      {message.text && (
-        <div
-          className={`p-3 rounded-md ${
-            message.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
+      <div className="grid gap-4 flex-1 overflow-hidden">
+        {/* Upload Card */}
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Upload Student Data</CardTitle>
+            <CardDescription>
+              Upload an Excel file with student records
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            {fileInfo && (
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <FileText className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="font-medium">{fileInfo.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {fileInfo.size} • {fileInfo.lastModified}
+                  </p>
+                </div>
+              </div>
+            )}
 
-      {validationResults.length > 0 && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-md">
-          <h3 className="font-medium mb-2">
-            Validation Results (
-            {validationResults.filter((r) => r.isValid).length} valid /{" "}
-            {validationResults.length} total)
-          </h3>
-          <div className="max-h-96 overflow-y-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2 border text-left">Row</th>
-                  <th className="p-2 border text-left">Program</th>
-                  <th className="p-2 border text-left">Semester</th>
-                  <th className="p-2 border text-left">Roll</th>
-                  <th className="p-2 border text-left">Status</th>
-                  <th className="p-2 border text-left">Errors</th>
-                </tr>
-              </thead>
-              <tbody>
-                {validationResults.map((result, index) => (
-                  <tr
-                    key={index}
-                    className={`${
-                      result.isValid ? "bg-white" : "bg-red-50"
-                    } hover:bg-gray-100`}
-                  >
-                    <td className="p-2 border">{result.rowNumber}</td>
-                    <td className="p-2 border">
-                      {result.Program}
-                      {result.programCode && (
-                        <div className="text-xs text-gray-500">
-                          Code: {result.programCode}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-2 border">{result.Semester}</td>
-                    <td className="p-2 border">{result.Roll}</td>
-                    <td className="p-2 border">
-                      {result.isValid ? (
-                        <span className="text-green-600">✓ Valid</span>
-                      ) : (
-                        <span className="text-red-600">✗ Invalid</span>
-                      )}
-                    </td>
-                    <td className="p-2 border text-red-600">
-                      {result.errors?.join(", ")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={handleDownloadTemplate}
+                disabled={isUploading}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download Template
+              </Button>
 
-      <div className="mt-6 p-4 bg-gray-50 rounded-md">
-        <h3 className="font-medium mb-2">Expected Data Format:</h3>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>
-            <strong>Program:</strong> Full program name (must exist in system)
-          </li>
-          <li>
-            <strong>Semester:</strong> Number between 1-8 (inclusive)
-          </li>
-          <li>
-            <strong>Roll:</strong> Positive integer
-          </li>
-        </ul>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleUploadExcel}
+                className="hidden"
+                disabled={isUploading}
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {isUploading ? "Uploading..." : "Upload Excel"}
+              </Button>
+            </div>
+
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Processing file...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Messages */}
+        {message.text && (
+          <Alert
+            variant={message.type === "success" ? "default" : "destructive"}
+          >
+            {message.type === "success" ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
+            <AlertDescription>{message.text}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Validation Results */}
+        {validationResults.length > 0 && (
+          <Card className="flex-1 overflow-hidden">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Validation Results</CardTitle>
+                <div className="flex gap-2">
+                  <Badge variant="success" className="gap-1">
+                    <Check className="h-3 w-3" /> {validCount} Valid
+                  </Badge>
+                  {invalidCount > 0 && (
+                    <Badge variant="destructive" className="gap-1">
+                      <X className="h-3 w-3" /> {invalidCount} Invalid
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-auto max-h-[400px]">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead className="w-[80px]">Row</TableHead>
+                      <TableHead>Program</TableHead>
+                      <TableHead>Semester</TableHead>
+                      <TableHead>Roll</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Errors</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {validationResults.map((result, index) => (
+                      <TableRow
+                        key={index}
+                        className={
+                          !result.isValid ? "bg-red-50 hover:bg-red-100" : ""
+                        }
+                      >
+                        <TableCell className="font-medium">
+                          {result.rowNumber}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{result.Program}</div>
+                          {result.programCode && (
+                            <div className="text-xs text-muted-foreground">
+                              Code: {result.programCode}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>{result.Semester}</TableCell>
+                        <TableCell>{result.Roll}</TableCell>
+                        <TableCell>
+                          {result.isValid ? (
+                            <Badge variant="success" className="gap-1">
+                              <Check className="h-3 w-3" /> Valid
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="gap-1">
+                              <X className="h-3 w-3" /> Invalid
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-red-600">
+                          {result.errors?.join(", ")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Requirements Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Format Requirements</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 w-2 h-2 rounded-full bg-primary" />
+              <div>
+                <span className="font-medium">Program:</span> Full program name
+                (must exist in system)
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-1 w-2 h-2 rounded-full bg-primary" />
+              <div>
+                <span className="font-medium">Semester:</span> Number between
+                1-8 (inclusive)
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-1 w-2 h-2 rounded-full bg-primary" />
+              <div>
+                <span className="font-medium">Roll:</span> Positive integer
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

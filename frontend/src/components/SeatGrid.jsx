@@ -225,7 +225,6 @@ const SeatingChartDisplay = ({ seatingChart, getProgramShort }) => (
     ))}
   </div>
 );
-
 const SeatRow = ({ row, getProgramShort }) => {
   const benches = [];
   for (let i = 0; i < row.length; i += 2) {
@@ -233,7 +232,9 @@ const SeatRow = ({ row, getProgramShort }) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-6">
+      {" "}
+      {/* increased gap */}
       {benches.map((bench, benchIdx) => (
         <div
           key={benchIdx}
