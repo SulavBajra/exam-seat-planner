@@ -242,35 +242,19 @@ const SeatRow = ({ row, getProgramShort }) => {
           {bench.map((seat, seatIdx) => (
             <div
               key={seatIdx}
-              className="flex-1 flex flex-col items-center justify-center text-xs sm:text-sm font-medium"
+              className="flex-1 flex items-center justify-center text-xs sm:text-sm font-medium"
               title={
                 seat
                   ? `${
                       seat.assignedStudent?.program?.programName || "No program"
-                    }
-ID: ${seat.assignedStudent?.studentId || "N/A"}
-Semester: ${seat.assignedStudent?.semester || "N/A"}
-Roll: ${seat.assignedStudent?.roll || "N/A"}`
+                    } 
+                     (ID: ${seat.assignedStudent?.studentId || "N/A"})`
                   : "Empty Seat"
               }
             >
-              {seat ? (
-                <>
-                  <span>
-                    {getProgramShort(
-                      seat.assignedStudent?.program?.programCode
-                    )}
-                  </span>
-                  <span className="text-[0.65rem] text-gray-600">
-                    S: {seat.assignedStudent?.semester || "-"}
-                  </span>
-                  <span className="text-[0.65rem] text-gray-600">
-                    R: {seat.assignedStudent?.roll || "-"}
-                  </span>
-                </>
-              ) : (
-                "—"
-              )}
+              {seat
+                ? getProgramShort(seat.assignedStudent?.program?.programCode)
+                : "—"}
             </div>
           ))}
         </div>

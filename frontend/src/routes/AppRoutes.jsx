@@ -6,6 +6,7 @@ import Exam from "@/components/Exam";
 import ExamList from "@/components/ExamList";
 import SeatGrid from "@/components/SeatGrid";
 import Room from "@/components/Room";
+import SeatingArrangement from "@/components/SeatingArrangement";
 import ChooseSeatPlan from "@/components/ChooseSeatPlan";
 
 export default function AppRoutes() {
@@ -20,6 +21,10 @@ export default function AppRoutes() {
         <Route path="room" element={<Room />} />
         <Route path="seatGrid/:examId" element={<SeatGrid />} />
         <Route path="/choose-seat-plan" element={<ChooseSeatPlan />} />
+        <Route
+          path="seatingArrangement/:examId"
+          element={<SeatingArrangement />}
+        />
       </Route>
     </Routes>
   );

@@ -48,7 +48,7 @@ export default function ExamList() {
               className="w-full justify-start"
               variant="outline"
             >
-              <Link to={`/seatGrid/${exam.id}`}>
+              <Link to={`/seatingArrangement/${exam.id}`}>
                 {exam.name || `Exam ${exam.id}`} -{" "}
                 {new Date(exam.date).toLocaleDateString()}
               </Link>
