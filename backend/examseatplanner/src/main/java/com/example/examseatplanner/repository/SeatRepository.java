@@ -19,6 +19,13 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
      */
     List<Seat> findByRoomRoomNo(Integer roomNo);
 
+    @Query("SELECT s FROM Seat s WHERE :examId IN (SELECT e.id FROM s.room.exams e)")
+    List<Seat> findByExamId(@Param("examId") Integer examId);
+
+
+
+
+
     /**
      * Find all seats assigned to a specific student
      */

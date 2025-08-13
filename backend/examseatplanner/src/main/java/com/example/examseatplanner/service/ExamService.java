@@ -7,16 +7,17 @@ import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Room;
+import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.RoomRepository;
+import com.example.examseatplanner.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ExamService {
@@ -24,14 +25,17 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final ProgramRepository programRepository;
     private final RoomRepository roomRepository;
+    private final StudentRepository studentRepository;
 
     @Autowired
     public ExamService(ExamRepository examRepository,
                        ProgramRepository programRepository,
-                       RoomRepository roomRepository) {
+                       RoomRepository roomRepository,
+                       StudentRepository studentRepository) {
         this.examRepository = examRepository;
         this.programRepository = programRepository;
         this.roomRepository = roomRepository;
+        this.studentRepository = studentRepository;
     }
 
     public List<Exam> getAllExams() {
@@ -42,12 +46,71 @@ public class ExamService {
         return examRepository.findById(examId);
     }
 
+    public void validateRoomCapacity(ExamRequestDTO request) {
+        // Calculate total students for all program-semester combinations
+        int totalStudents = request.programSemesters().stream()
+                .mapToInt(ps -> {
+                    Student.Semester semesterEnum = intToSemester(ps.semester());
+                    return (int) studentRepository.countByProgramCodeAndSemester(
+                            ps.programCode(),
+                            semesterEnum);
+                })
+                .sum();
+
+        // Get all rooms and calculate total capacity
+        List<Room> rooms = roomRepository.findAllById(request.roomNumbers());
+
+        // Check if all requested rooms exist
+        if (rooms.size() != request.roomNumbers().size()) {
+            List<Integer> missingRooms = new ArrayList<>(request.roomNumbers());
+            rooms.forEach(r -> missingRooms.remove(r.getRoomNo()));
+            throw new IllegalArgumentException(
+                    "The following rooms don't exist: " + missingRooms
+            );
+        }
+
+        int totalRoomCapacity = rooms.stream()
+                .mapToInt(Room::getSeatingCapacity)
+                .sum();
+
+        // Detailed validation
+        if (totalRoomCapacity < totalStudents) {
+            // Calculate how much additional capacity is needed
+            int deficit = totalStudents - totalRoomCapacity;
+
+            // Get student count per program-semester for detailed error message
+            Map<String, Integer> studentCounts = request.programSemesters().stream()
+                    .collect(Collectors.toMap(
+                            ps -> "Program " + ps.programCode() + " Semester " + ps.semester(),
+                            ps -> {
+                                Student.Semester semesterEnum = intToSemester(ps.semester());
+                                return (int) studentRepository.countByProgramCodeAndSemester(
+                                        ps.programCode(), semesterEnum);
+                            }
+                    ));
+
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Insufficient room capacity. Need %d more seats.%n" +
+                                    "Total students: %d%n" +
+                                    "Total capacity: %d%n" +
+                                    "Breakdown by program-semester: %s",
+                            deficit,
+                            totalStudents,
+                            totalRoomCapacity,
+                            studentCounts
+                    )
+            );
+        }
+    }
+
     public ExamResponseDTO createExamFromDto(ExamRequestDTO dto) {
         // Validate and fetch programs
         List<Integer> programCodes = dto.programSemesters().stream()
                 .map(ProgramSemesterDTO::programCode)
                 .distinct()
                 .toList();
+        validateRoomCapacity(dto);
 
         List<Program> programs = programRepository.findAllById(programCodes);
         if (programs.size() != programCodes.size()) {
@@ -60,9 +123,35 @@ public class ExamService {
             throw new IllegalArgumentException("One or more room numbers are invalid");
         }
 
+        long totalStudents = 0;
+        for (ProgramSemesterDTO ps : dto.programSemesters()) {
+            int semesterInt = ps.semester();
+            Student.Semester semesterEnum = intToSemester(semesterInt);
+
+            totalStudents += studentRepository.countByProgramCodeAndSemester(ps.programCode(), semesterEnum);
+        }
+
+        int totalCapacity = rooms.stream()
+                .mapToInt(Room::getSeatingCapacity)
+                .sum();
+
+        if (totalStudents > totalCapacity) {
+            throw new IllegalArgumentException("Room capacity not enough");
+        }
+
+
+
         Exam exam = ExamMapper.toEntity(dto, programs, rooms);
         Exam savedExam = examRepository.save(exam);
         return ExamMapper.toDto(savedExam);
+    }
+
+    public Student.Semester intToSemester(int sem) {
+        Student.Semester[] semesters = Student.Semester.values();
+        if (sem < 1 || sem > semesters.length) {
+            throw new IllegalArgumentException("Invalid semester number: " + sem);
+        }
+        return semesters[sem - 1];
     }
 
     public ExamResponseDTO updateExamFromDto(Integer examId, ExamRequestDTO dto) {

@@ -1,4 +1,4 @@
 package com.example.examseatplanner.dto;
 
-public class ProgramDTO {
-}
+public record ProgramDTO(Integer programCode, String programName) {}
+

@@ -34,6 +34,12 @@ public class SeatController {
                 ));
     }
 
+    @GetMapping("/{examId}")
+    public ResponseEntity<Map<String, List<SeatDTO>>> getExamSeatInfo(@PathVariable Integer examId) { // ✅ Changed from Long to Integer
+        Map<String, List<SeatDTO>> assignments = seatAllocationService.getSeatAssignmentsByExamId(examId);
+        return ResponseEntity.ok(assignments);
+    }
+
     // In SeatAllocationController.java
     @GetMapping("/assignments/{examId}")
     public ResponseEntity<Map<String, List<SeatDTO>>> getAssignments(@PathVariable Integer examId) { // ✅ Changed from Long to Integer

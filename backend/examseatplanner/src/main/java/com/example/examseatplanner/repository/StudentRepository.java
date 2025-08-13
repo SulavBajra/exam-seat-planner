@@ -18,6 +18,17 @@ public interface StudentRepository extends JpaRepository<Student, String> {
      */
     List<Student> findByProgram(Program program);
 
+    @Query("SELECT COUNT(s) FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester")
+    long countByProgramCodeAndSemester(@Param("programCode") Integer programCode,
+                                       @Param("semester") Student.Semester semester);
+
+    @Query("""
+        SELECT s FROM Student s
+        JOIN ExamProgramSemester eps ON eps.program = s.program AND eps.semester = s.semester
+        WHERE eps.exam.id = :examId
+    """)
+    List<Student> findByExamId(@Param("examId") Integer examId);
+
     /**
      * Find students by multiple programs
      */

@@ -51,7 +51,7 @@ public class SeatAllocationController {
                 return ResponseEntity.notFound().build();
             }
 
-            SeatAllocationResult result = seatAllocationService.allocateSeatsForExam(examOpt.get());
+            SeatAllocationResult result = seatAllocationService.allocateSeatsByProgramColumns(examOpt.get());
             Map<Room, Seat[][][]> seatingChart = seatAllocationService.getSeatingChart(examOpt.get());
             SeatAllocationResponseDTO responseDTO = dtoService.convertToDTO(result, seatingChart);
 

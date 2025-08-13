@@ -23,6 +23,9 @@
         @JsonManagedReference
         private List<Seat> seats = new ArrayList<>();
 
+        @ManyToMany(mappedBy = "rooms")
+        private List<Exam> exams;
+
 
         public Room() {
         }

@@ -15,4 +15,6 @@ public record ExamRequestDTO(
 
         @NotEmpty(message = "Room list must not be empty")
         List<@NotNull(message = "Room number cannot be null") Integer> roomNumbers
-) {}
+) {
+
+}
