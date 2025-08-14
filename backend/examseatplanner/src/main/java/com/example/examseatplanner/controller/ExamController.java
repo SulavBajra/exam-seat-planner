@@ -4,6 +4,7 @@ import com.example.examseatplanner.dto.BulkExamRequestDTO;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.model.Exam;
+import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.service.ExamService;
 import jakarta.validation.Valid;
@@ -71,7 +72,22 @@ public class ExamController {
         return ResponseEntity.ok(createdExams);
     }
 
+    @GetMapping("/booked-rooms")
+    public List<Integer> getBookedRoomsByDate(@RequestParam("date") String date) {
+        LocalDate examDate = LocalDate.parse(date);
+        return examService.getBookedRoomsByDate(examDate);
+    }
 
+    @GetMapping("/{roomNo}/is-booked")
+    public boolean isRoomBooked(@PathVariable Integer roomNo) {
+        return examService.isRoomBooked(roomNo);
+    }
+
+
+    @GetMapping("/programNames/{examId}")
+    public List<Program> getProgramByExamId(@PathVariable Integer examId){
+        return examService.getProgramByExamId(examId);
+    }
 
     @PostMapping
     public ResponseEntity<ExamResponseDTO> createExam(@RequestBody @Valid ExamRequestDTO dto) {

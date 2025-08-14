@@ -22,6 +22,7 @@ public class RoomController {
 
     @GetMapping
     public List<RoomResponseDTO> getAllRooms() {
+
         return roomService.getAllRooms();
     }
 

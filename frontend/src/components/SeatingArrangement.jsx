@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Label } from "@/components/ui/label";
 
 const SEATS_PER_BENCH = 2;
 const BENCH_SIDES = ["Left", "Middle", "Right"];
@@ -9,6 +10,7 @@ export default function SeatingArrangement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [examData, setExamData] = useState(null);
+  const [programData, setProgramData] = useState([]);
 
   useEffect(() => {
     if (!examId) return;
@@ -32,6 +34,30 @@ export default function SeatingArrangement() {
     };
 
     fetchExamData();
+  }, [examId]);
+
+  useEffect(() => {
+    if (!examId) return;
+
+    const fetchProgram = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `http://localhost:8081/api/exams/programNames/${examId}`
+        );
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        setProgramData(data);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || "Failed to fetch exam data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgram();
   }, [examId]);
 
   if (loading) return <div>Loading...</div>;
@@ -122,9 +148,56 @@ export default function SeatingArrangement() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Seating Arrangement</h1>
-      {examData.rooms.map((room) => renderRoom(room))}
+    <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex-1">
+        <h1 className="text-2xl font-bold mb-4">Seating Arrangement</h1>
+        <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 text-sm font-medium mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>
+            Format:{" "}
+            <span className="font-semibold text-blue-600">Program Code</span> -{" "}
+            <span className="font-semibold text-blue-600">Semester</span> -{" "}
+            <span className="font-semibold text-blue-600">Roll Number</span>
+          </span>
+        </div>
+        {examData.rooms.map((room) => renderRoom(room))}
+      </div>
+
+      {/* Improved Legend Section on the right */}
+      <div className="md:w-64 lg:w-80">
+        <div className="sticky top-4 bg-white p-4 rounded-lg shadow-md border border-gray-200">
+          <h3 className="text-lg font-semibold mb-3 pb-2 border-b border-gray-200">
+            Program Legend
+          </h3>
+          <div className="space-y-2">
+            {programData.map((program) => (
+              <div
+                key={program.programCode}
+                className="flex items-start py-1.5"
+              >
+                <span className="inline-block w-4 h-4 mt-1 mr-2 rounded-sm flex-shrink-0"></span>
+                <div className="text-sm">
+                  <span className="font-medium">{program.programCode}</span>
+                  <p className="text-gray-600">{program.programName}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

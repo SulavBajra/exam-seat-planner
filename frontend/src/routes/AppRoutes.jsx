@@ -9,6 +9,7 @@ import Room from "@/components/Room";
 import SeatingArrangement from "@/components/SeatingArrangement";
 import ChooseSeatPlan from "@/components/ChooseSeatPlan";
 import StudentList from "@/components/StudentList";
+import Login from "@/components/Login";
 
 export default function AppRoutes() {
   return (
@@ -28,6 +29,7 @@ export default function AppRoutes() {
           element={<SeatingArrangement />}
         />
       </Route>
+      <Route path="/login" element={<Login />} />
     </Routes>
   );
 }

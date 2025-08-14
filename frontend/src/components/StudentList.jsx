@@ -21,8 +21,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 export default function StudentList() {
   const [students, setStudents] = useState([]);
@@ -45,11 +46,7 @@ export default function StudentList() {
     } catch (error) {
       console.error("Error fetching students:", error);
       setError(error.message);
-      toast({
-        variant: "destructive",
-        title: "Error fetching students",
-        description: error.message,
-      });
+      toast.error(`Error fetching students: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -75,14 +72,45 @@ export default function StudentList() {
       fetchStudents(); // Refresh the list after clearing
     } catch (error) {
       console.error("Error clearing Student Data: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error clearing data",
-        description: error.message,
-      });
+      toast.error(`Error clearing data: ${error.message}`);
     } finally {
       setIsClearing(false);
       setIsConfirmOpen(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (students.length === 0) {
+      toast.warning("No data to export");
+      return;
+    }
+
+    try {
+      // Prepare the worksheet
+      const worksheet = XLSX.utils.json_to_sheet(
+        students.map((student) => ({
+          "Program Name": student.programName,
+          "Student ID": student.studentId,
+          Semester: student.semester,
+          Roll: student.roll,
+        }))
+      );
+
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+      // Generate the Excel file
+      XLSX.writeFile(workbook, "students_data.xlsx", { compression: true });
+
+      toast.success("Excel file downloaded successfully");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast({
+        variant: "destructive",
+        title: "Error exporting data",
+        description: error.message,
+      });
     }
   };
 
@@ -138,6 +166,15 @@ export default function StudentList() {
               Refresh
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={loading || students.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Excel
+            </Button>
+            <Button
               variant="destructive"
               size="sm"
               onClick={() => setIsConfirmOpen(true)}
@@ -191,9 +228,7 @@ export default function StudentList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => navigate("/student")}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClear}
               disabled={isClearing}

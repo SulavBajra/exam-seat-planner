@@ -72,6 +72,10 @@ export default function SeatGrid() {
     fetchData();
   }, [examId]);
 
+  useEffect(() => {
+    console.log("Seating chart:", seatingChart);
+  }, [seatingChart]);
+
   function parseRoomInfo(key) {
     // Remove "Room{" and "}" around it
     const inside = key.replace(/^Room\{/, "").replace(/\}$/, "");
@@ -113,7 +117,7 @@ export default function SeatGrid() {
           row?.forEach((seat) => {
             if (seat?.assignedStudent?.program) {
               const { programCode, programName } = seat.assignedStudent.program;
-              programMap.set(programCode, programName);
+              programMap.set(programCode.trim(), programName); // trim here
             }
           });
         });
@@ -133,7 +137,8 @@ export default function SeatGrid() {
   };
 
   const getProgramShort = (programCode) => {
-    return programs.find((p) => p.code === programCode)?.short || "—";
+    const code = programCode?.trim();
+    return programs.find((p) => p.code === code)?.short || "—";
   };
 
   if (loading) return <LoadingSkeleton />;
@@ -148,6 +153,7 @@ export default function SeatGrid() {
       <SeatingChartDisplay
         seatingChart={seatingChart}
         getProgramShort={getProgramShort}
+        programs={programs}
       />
     </div>
   );
@@ -183,7 +189,6 @@ const Header = ({ roomInfo }) => (
     </span>
   </h2>
 );
-
 const ProgramLegend = ({ programs }) =>
   programs.length > 0 && (
     <div className="flex justify-center gap-4 mb-6 flex-wrap">
@@ -193,13 +198,13 @@ const ProgramLegend = ({ programs }) =>
           className="border border-black px-3 py-1 rounded"
           style={{ backgroundColor: p.color }}
         >
-          {p.short}: {p.name}
+          {p.code}: {p.name}
         </div>
       ))}
     </div>
   );
 
-const SeatingChartDisplay = ({ seatingChart, getProgramShort }) => (
+const SeatingChartDisplay = ({ seatingChart, getProgramShort, programs }) => (
   <div className="space-y-8">
     {seatingChart.map(({ roomInfo, seating }, idx) => (
       <div
@@ -218,6 +223,7 @@ const SeatingChartDisplay = ({ seatingChart, getProgramShort }) => (
                 key={`room-${roomInfo.roomNo}-row-${rowIdx}`}
                 row={row}
                 getProgramShort={getProgramShort}
+                programs={programs} // ✅ Will now have correct value
               />
             ))}
         </div>
@@ -225,39 +231,51 @@ const SeatingChartDisplay = ({ seatingChart, getProgramShort }) => (
     ))}
   </div>
 );
-const SeatRow = ({ row, getProgramShort }) => {
+const SeatRow = ({ row, getProgramShort, programs }) => {
   const benches = [];
-  for (let i = 0; i < row.length; i += 2) {
-    benches.push(row.slice(i, i + 2));
-  }
+  for (let i = 0; i < row.length; i += 2) benches.push(row.slice(i, i + 2));
 
   return (
-    <div className="flex flex-wrap gap-6">
-      {" "}
-      {/* increased gap */}
+    <div className="flex flex-wrap gap-8">
       {benches.map((bench, benchIdx) => (
         <div
           key={benchIdx}
           className="border border-green-500 rounded-sm flex w-28 sm:w-32 h-12 items-center justify-around bg-white"
         >
-          {bench.map((seat, seatIdx) => (
-            <div
-              key={seatIdx}
-              className="flex-1 flex items-center justify-center text-xs sm:text-sm font-medium"
-              title={
-                seat
-                  ? `${
-                      seat.assignedStudent?.program?.programName || "No program"
-                    } 
-                     (ID: ${seat.assignedStudent?.studentId || "N/A"})`
-                  : "Empty Seat"
-              }
-            >
-              {seat
-                ? getProgramShort(seat.assignedStudent?.program?.programCode)
-                : "—"}
-            </div>
-          ))}
+          {bench.map((seat, seatIdx) => {
+            const code = seat?.assignedStudent?.program?.programCode?.trim();
+            const shortCode = code ? getProgramShort(code) : "—";
+            const program = programs.find((p) => p.code === code);
+            // Debug
+            if (seat) {
+              console.log(
+                "Seat program code:",
+                `"${seat.assignedStudent?.program?.programCode}"`,
+                "Trimmed code:",
+                `"${code}"`,
+                "Programs array codes:",
+                programs.map((p) => `"${p.code}"`)
+              );
+            }
+
+            return (
+              <div
+                key={seatIdx}
+                className="flex-1 flex items-center justify-center text-xs sm:text-sm font-medium rounded-sm"
+                style={{ backgroundColor: program ? program.color : "#f3f4f6" }}
+                title={
+                  seat
+                    ? `${
+                        seat.assignedStudent?.program?.programName ||
+                        "No program"
+                      } (ID: ${seat.assignedStudent?.studentId || "N/A"})`
+                    : "Empty Seat"
+                }
+              >
+                {shortCode}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

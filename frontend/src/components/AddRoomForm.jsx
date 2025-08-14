@@ -64,7 +64,8 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             Add New Room
           </DialogTitle>
           <DialogDescription>
-            Enter the room details below. Click save when you're done.
+            Enter the room details below. Click save when you're done.`` The
+            capacity should be divisible by three
           </DialogDescription>
         </DialogHeader>
 

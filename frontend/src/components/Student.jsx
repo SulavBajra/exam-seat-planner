@@ -389,7 +389,7 @@ export default function Student() {
               <div className="mt-1 w-2 h-2 rounded-full bg-primary" />
               <div>
                 <span className="font-medium">Program:</span> Full program name
-                (must exist in system)
+                (must exist in system, check program page for valid names)
               </div>
             </div>
             <div className="flex items-start gap-3">

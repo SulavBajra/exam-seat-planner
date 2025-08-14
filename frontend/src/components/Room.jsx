@@ -8,15 +8,25 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { DoorOpen, Plus } from "lucide-react";
+import { DoorOpen, Plus, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function Room() {
   const [rooms, setRooms] = useState([]);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomDetails, setRoomDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -47,6 +57,68 @@ export default function Room() {
   const handleRoomAdded = (newRoom) => {
     setRooms((prev) => [...prev, newRoom]);
     setShowAddRoom(false);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedRoom(null);
+    setRoomDetails(null);
+  };
+
+  const fetchRoomDetails = async (roomNo) => {
+    setDetailsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8081/api/rooms/${roomNo}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch room details: ${response.status}`);
+      }
+      const data = await response.json();
+      setRoomDetails(data);
+      setSelectedRoom(roomNo);
+    } catch (error) {
+      console.error("Error fetching room details:", error);
+      toast.error("Failed to load room details");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+  const handleRemoveRoom = async (roomNo) => {
+    try {
+      // Check if the room is booked
+      const bookedRes = await fetch(
+        `http://localhost:8081/api/rooms/${roomNo}/is-booked`
+      );
+      if (!bookedRes.ok) throw new Error("Failed to check room status");
+      const isBooked = await bookedRes.json();
+
+      if (isBooked) {
+        toast.error(
+          `Cannot remove Room ${roomNo} because it is assigned to an exam`
+        );
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to remove Room ${roomNo}?`)) return;
+
+      // Proceed with delete
+      const response = await fetch(
+        `http://localhost:8081/api/rooms/${roomNo}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok)
+        throw new Error(`Failed to delete room: ${response.status}`);
+
+      setRooms((prev) => prev.filter((room) => room.roomNo !== roomNo));
+
+      if (selectedRoom === roomNo) handleCloseDetails();
+
+      toast.success(`Room ${roomNo} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      toast.error(`Failed to delete Room ${roomNo}`);
+    }
   };
 
   return (
@@ -88,7 +160,8 @@ export default function Room() {
           {rooms.map((room) => (
             <Card
               key={room.roomNo}
-              className="hover:shadow-md transition-shadow"
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => fetchRoomDetails(room.roomNo)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
@@ -116,6 +189,10 @@ export default function Room() {
                   variant="ghost"
                   size="sm"
                   className="text-red-500 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveRoom(room.roomNo);
+                  }}
                 >
                   Remove
                 </Button>
@@ -144,6 +221,42 @@ export default function Room() {
           onRoomAdded={handleRoomAdded}
         />
       )}
+
+      <Dialog open={!!selectedRoom} onOpenChange={handleCloseDetails}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Room {selectedRoom} Details</span>
+            </DialogTitle>
+          </DialogHeader>
+          {detailsLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ) : roomDetails ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Room Number:</span>
+                <span>{roomDetails.roomNo}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Student Capacity:</span>
+                <Badge variant="secondary">
+                  {roomDetails.seatingCapacity} students
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Rows:</span>
+                <Badge variant="secondary">{roomDetails.numRow} rows</Badge>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">No details available</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

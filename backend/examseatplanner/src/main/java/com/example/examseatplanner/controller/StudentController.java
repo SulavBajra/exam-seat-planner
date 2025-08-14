@@ -93,6 +93,13 @@ public class StudentController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/clear")
+    public ResponseEntity<Void> deleteAllStudents() {
+        studentService.deleteAllStudents();
+        return ResponseEntity.noContent().build();
+    }
+
+
     @GetMapping("/semester/{semester}")
     public List<StudentResponseDTO> getStudentsBySemester(@PathVariable int semester) {
         List<Student> students = studentService.getStudentsBySemester(semester);

@@ -16,10 +16,16 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
     programs: false,
     submitting: false,
   });
+  const [formData, setFormData] = useState({
+    date: "",
+    programSemesters: [],
+    rooms: [],
+  });
   const [error, setError] = useState({
     rooms: null,
     programs: null,
   });
+  const [bookedRooms, setBookedRooms] = useState([]);
 
   const semesters = [
     "FIRST",
@@ -37,7 +43,26 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
     fetchPrograms();
   }, []);
 
-  // Helper function to get today's date in YYYY-MM-DD format
+  useEffect(() => {
+    if (!formData.date) return;
+
+    async function fetchBookedRooms() {
+      try {
+        const res = await fetch(
+          `http://localhost:8081/api/exams/booked-rooms?date=${formData.date}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch booked rooms");
+        const data = await res.json();
+        setBookedRooms(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch already booked rooms");
+      }
+    }
+
+    fetchBookedRooms();
+  }, [formData.date]);
+
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -77,12 +102,6 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
       setIsLoading((prev) => ({ ...prev, programs: false }));
     }
   }
-
-  const [formData, setFormData] = useState({
-    date: "",
-    programSemesters: [],
-    rooms: [],
-  });
 
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
@@ -279,34 +298,46 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
           ) : (
             <ScrollArea className="h-[180px] rounded-md border">
               <div className="p-3 space-y-2">
-                {rooms.map((room) => (
-                  <Label
-                    key={room.roomNo}
-                    className="flex items-center gap-3 p-2 hover:bg-accent rounded"
-                  >
-                    <Checkbox
-                      checked={formData.rooms.some(
-                        (r) => r.roomNo === room.roomNo
-                      )}
-                      onCheckedChange={(checked) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          rooms: checked
-                            ? [...prev.rooms, room]
-                            : prev.rooms.filter(
-                                (r) => r.roomNo !== room.roomNo
-                              ),
-                        }));
-                      }}
-                    />
-                    <div className="flex-1 flex justify-between items-center">
-                      <span>Room {room.roomNo}</span>
-                      <Badge variant="outline">
-                        {room.seatingCapacity} seats
-                      </Badge>
-                    </div>
-                  </Label>
-                ))}
+                {rooms.map((room) => {
+                  const isBooked = bookedRooms.includes(room.roomNo); // check if room is already booked
+
+                  return (
+                    <Label
+                      key={room.roomNo}
+                      className={`flex items-center gap-3 p-2 hover:bg-accent rounded ${
+                        isBooked ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <Checkbox
+                        checked={formData.rooms.some(
+                          (r) => r.roomNo === room.roomNo
+                        )}
+                        disabled={isBooked} // disable checkbox if booked
+                        onCheckedChange={(checked) => {
+                          if (isBooked) return;
+                          setFormData((prev) => ({
+                            ...prev,
+                            rooms: checked
+                              ? [...prev.rooms, room]
+                              : prev.rooms.filter(
+                                  (r) => r.roomNo !== room.roomNo
+                                ),
+                          }));
+                        }}
+                      />
+                      <div className="flex-1 flex justify-between items-center">
+                        <span
+                          title={isBooked ? "This room is already booked" : ""}
+                        >
+                          Room {room.roomNo}
+                        </span>
+                        <Badge variant="outline">
+                          {room.seatingCapacity} seats
+                        </Badge>
+                      </div>
+                    </Label>
+                  );
+                })}
               </div>
             </ScrollArea>
           )}

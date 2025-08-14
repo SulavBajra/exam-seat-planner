@@ -42,6 +42,32 @@ public class ExamService {
         return examRepository.findAll();
     }
 
+    public List<Integer> getBookedRoomsByDate(LocalDate date) {
+        return examRepository.findAll().stream()
+                .filter(exam -> exam.getDate().equals(date))
+                .flatMap(exam -> exam.getRooms().stream())
+                .map(Room::getRoomNo)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<Program> getProgramByExamId(Integer examId) {
+        Optional<Exam> examOpt = getExamById(examId);
+        if (examOpt.isPresent()) {
+            Exam exam = examOpt.get();
+            // getPrograms() already returns List<Program>
+            return exam.getPrograms();
+        }
+        return new ArrayList<>();
+    }
+
+    public boolean isRoomBooked(Integer roomNo) {
+        return examRepository.findAll().stream()
+                .anyMatch(exam -> exam.getRooms().stream()
+                        .anyMatch(room -> room.getRoomNo().equals(roomNo)));
+    }
+
+
     public Optional<Exam> getExamById(Integer examId) {
         return examRepository.findById(examId);
     }

@@ -63,6 +63,10 @@ public class StudentService {
         return allStudents;
     }
 
+    public void deleteAllStudents() {
+        studentRepository.deleteAll();
+    }
+
     public Optional<Student> getStudentById(String studentId) {
         return studentRepository.findById(studentId);
     }
