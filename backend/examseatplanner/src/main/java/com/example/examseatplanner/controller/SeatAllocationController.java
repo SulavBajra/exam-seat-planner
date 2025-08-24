@@ -46,7 +46,7 @@ public class SeatAllocationController {
     @PostMapping("/exam/{examId}/allocate")
     public ResponseEntity<SeatAllocationResponseDTO> allocateSeats(@PathVariable Integer examId) {
         try {
-            Optional<Exam> examOpt = examService.getExamById(examId);
+            Optional<Exam> examOpt = examService.getExamEntityById(examId);
             if (examOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
@@ -67,7 +67,7 @@ public class SeatAllocationController {
      */
     @GetMapping("/exam/{examId}/seating-chart")
     public ResponseEntity<Map<Room, Seat[][][]>> getSeatingChart(@PathVariable Integer examId) {
-        Optional<Exam> examOpt = examService.getExamById(examId);
+        Optional<Exam> examOpt = examService.getExamEntityById(examId);
         if (examOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -81,7 +81,7 @@ public class SeatAllocationController {
      */
     @DeleteMapping("/exam/{examId}/clear")
     public ResponseEntity<String> clearSeatAssignments(@PathVariable Integer examId) {
-        Optional<Exam> examOpt = examService.getExamById(examId);
+        Optional<Exam> examOpt = examService.getExamEntityById(examId);
         if (examOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -95,7 +95,7 @@ public class SeatAllocationController {
      */
     @GetMapping("/exam/{examId}/validate")
     public ResponseEntity<Map<String, Object>> validateSeatAllocation(@PathVariable Integer examId) {
-        Optional<Exam> examOpt = examService.getExamById(examId);
+        Optional<Exam> examOpt = examService.getExamEntityById(examId);
         if (examOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -116,7 +116,7 @@ public class SeatAllocationController {
      */
     @GetMapping("/exam/{examId}/statistics")
     public ResponseEntity<Map<String, Object>> getAllocationStatistics(@PathVariable Integer examId) {
-        Optional<Exam> examOpt = examService.getExamById(examId);
+        Optional<Exam> examOpt = examService.getExamEntityById(examId);
         if (examOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -136,7 +136,7 @@ public class SeatAllocationController {
     @GetMapping("/exam/{examId}/room/{roomNo}/visualization")
     public ResponseEntity<String> getSeatingVisualization(@PathVariable Integer examId,
                                                           @PathVariable Integer roomNo) {
-        Optional<Exam> examOpt = examService.getExamById(examId);
+        Optional<Exam> examOpt = examService.getExamEntityById(examId);
         if (examOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

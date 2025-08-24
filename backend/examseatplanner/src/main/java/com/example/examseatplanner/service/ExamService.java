@@ -38,8 +38,8 @@ public class ExamService {
         this.studentRepository = studentRepository;
     }
 
-    public List<Exam> getAllExams() {
-        return examRepository.findAll();
+    public List<ExamResponseDTO> getAllExams() {
+        return examRepository.findAll().stream().map(ExamMapper::toDto).toList();
     }
 
     public List<Integer> getBookedRoomsByDate(LocalDate date) {
@@ -51,8 +51,13 @@ public class ExamService {
                 .collect(Collectors.toList());
     }
 
+    public Optional<Exam> getExamEntityById(Integer examId) {
+        return examRepository.findById(examId);
+    }
+
+
     public List<Program> getProgramByExamId(Integer examId) {
-        Optional<Exam> examOpt = getExamById(examId);
+        Optional<Exam> examOpt = getExamEntityById(examId);
         if (examOpt.isPresent()) {
             Exam exam = examOpt.get();
             // getPrograms() already returns List<Program>
@@ -68,8 +73,13 @@ public class ExamService {
     }
 
 
-    public Optional<Exam> getExamById(Integer examId) {
-        return examRepository.findById(examId);
+    public Optional<ExamResponseDTO> getExamById(Integer examId) {
+        return examRepository.findById(examId)
+                .map(ExamMapper::toDto);
+    }
+
+    public Long getTotalStudentsForExam(Integer examId) {
+        return studentRepository.countStudentsForExam(examId);
     }
 
     public void validateRoomCapacity(ExamRequestDTO request) {

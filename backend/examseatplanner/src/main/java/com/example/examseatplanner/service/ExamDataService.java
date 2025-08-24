@@ -33,7 +33,7 @@ public class ExamDataService {
 
         // Rooms
         List<RoomDTO> rooms = exam.getRooms().stream()
-                .map(r -> new RoomDTO(r.getRoomNo(), r.getSeatingCapacity(), r.getNumRow()))
+                .map(r -> new RoomDTO(r.getRoomNo(), r.getSeatingCapacity(), r.getNumRow(),r.getSeatsPerBench(),r.getRoomColumn()))
                 .toList();
 
         // Students

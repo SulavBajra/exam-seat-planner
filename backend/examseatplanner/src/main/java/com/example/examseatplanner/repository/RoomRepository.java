@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
@@ -21,7 +22,6 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
      * Find rooms by number of rows
      */
     List<Room> findByNumRow(int numRow);
-
 
     /**
      * Find rooms with exact capacity

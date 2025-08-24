@@ -4,65 +4,60 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SeatGrid() {
   const { examId } = useParams();
-  const [seatingChart, setSeatingChart] = useState([]);
-  const [programs, setPrograms] = useState([]);
-  const [roomInfo, setRoomInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [allowedRooms, setAllowedRooms] = useState([]);
+  const [seatingChart, setSeatingChart] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [examInfo, setExamInfo] = useState(null);
 
   useEffect(() => {
-    if (!examId) {
-      setError("Exam ID is required");
-      setLoading(false);
-      return;
-    }
+    if (!examId) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch seating chart data
-        const response = await fetch(
+        // Fetch exam seating data
+        const seatRes = await fetch(
           `http://localhost:8081/api/seat-allocation/exam/${examId}/seating-chart`
         );
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
+        if (!seatRes.ok)
+          throw new Error(`Failed to fetch seating chart: ${seatRes.status}`);
+        const seatData = await seatRes.json();
 
-        // Fetch allowed rooms for the exam
-        const examResponse = await fetch(
-          `http://localhost:8081/api/exams/rooms/${examId}`
+        // Fetch exam programs
+        const progRes = await fetch(
+          `http://localhost:8081/api/exams/programNames/${examId}`
         );
-        if (!examResponse.ok)
-          throw new Error(`HTTP error! status: ${examResponse.status}`);
-        const roomData = await examResponse.json();
+        if (!progRes.ok)
+          throw new Error(`Failed to fetch programs: ${progRes.status}`);
+        const progData = await progRes.json();
 
-        // Convert allowed rooms to numbers if needed (depends on your backend response)
-        const allowedRoomNumbers = roomData.map((r) =>
-          typeof r === "string" ? Number(r) : r
+        setPrograms(
+          progData.map((p, idx) => ({
+            ...p,
+            short: `P${idx + 1}`,
+            color: `hsl(${(idx * 60) % 360}, 70%, 80%)`,
+          }))
         );
-        setAllowedRooms(allowedRoomNumbers);
 
-        // Process seating data with allowed rooms list
-        processSeatingData(data, allowedRoomNumbers);
-
-        // Set roomInfo to first filtered room's info if exists
-        const firstRoomKey = Object.keys(data).find((key) => {
-          const match = key.match(/roomNo=(\d+)/);
-          if (!match) return false;
-          return allowedRoomNumbers.includes(Number(match[1]));
+        // Process seating data
+        const processed = Object.keys(seatData).map((roomKey) => {
+          const roomInfo = parseRoomInfo(roomKey);
+          const seating = seatData[roomKey];
+          return { roomInfo, seating };
         });
 
-        if (firstRoomKey) {
-          const firstRoomInfo = parseRoomInfo(firstRoomKey);
-          setRoomInfo(firstRoomInfo);
-        } else {
-          setRoomInfo(null);
-        }
+        setSeatingChart(processed);
+
+        // Set exam info from first room (or use API if available)
+        setExamInfo({
+          id: examId,
+          date: processed[0]?.roomInfo?.examDate || "",
+        });
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error(err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -72,203 +67,113 @@ export default function SeatGrid() {
     fetchData();
   }, [examId]);
 
-  useEffect(() => {
-    console.log("Seating chart:", seatingChart);
-  }, [seatingChart]);
-
-  function parseRoomInfo(key) {
-    // Remove "Room{" and "}" around it
+  const parseRoomInfo = (key) => {
     const inside = key.replace(/^Room\{/, "").replace(/\}$/, "");
-
-    // Split by comma and parse each key=value
     const parts = inside.split(", ");
     const info = {};
-
     parts.forEach((part) => {
       const [k, v] = part.split("=");
-      // parse numbers if possible
       const numVal = Number(v);
       info[k] = isNaN(numVal) ? v : numVal;
     });
-
     return info;
-  }
-
-  const processSeatingData = (data, allowedRooms) => {
-    const filteredRooms = Object.keys(data)
-      .filter((roomKey) => {
-        const match = roomKey.match(/roomNo=(\d+)/);
-        if (!match) return false;
-        const roomNo = Number(match[1]);
-        return allowedRooms.includes(roomNo);
-      })
-      .map((roomKey) => ({
-        roomKey,
-        roomNo: Number(roomKey.match(/roomNo=(\d+)/)[1]),
-        seating: data[roomKey],
-        roomInfo: parseRoomInfo(roomKey), // <-- Use parseRoomInfo here
-      }));
-
-    // Build program map from seating data
-    const programMap = new Map();
-    filteredRooms.forEach(({ seating }) => {
-      seating.forEach((side) => {
-        side?.forEach((row) => {
-          row?.forEach((seat) => {
-            if (seat?.assignedStudent?.program) {
-              const { programCode, programName } = seat.assignedStudent.program;
-              programMap.set(programCode.trim(), programName); // trim here
-            }
-          });
-        });
-      });
-    });
-
-    setPrograms(
-      Array.from(programMap.entries()).map(([code, name], idx) => ({
-        code,
-        name,
-        short: `P${idx + 1}`,
-        color: `hsl(${(idx * 60) % 360}, 70%, 80%)`,
-      }))
-    );
-
-    setSeatingChart(filteredRooms);
   };
 
-  const getProgramShort = (programCode) => {
-    const code = programCode?.trim();
-    return programs.find((p) => p.code === code)?.short || "—";
+  const getProgramShort = (code) => {
+    code = code?.toString().trim();
+    return (
+      programs.find((p) => p.programCode.toString() === code)?.short || "—"
+    );
   };
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorDisplay message={error} />;
-  if (!roomInfo)
-    return <div className="p-4">No room information available</div>;
 
   return (
-    <div className="border p-4 max-w-6xl mx-auto">
-      <Header roomInfo={roomInfo} />
-      <ProgramLegend programs={programs} />
-      <SeatingChartDisplay
-        seatingChart={seatingChart}
-        getProgramShort={getProgramShort}
-        programs={programs}
-      />
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">
+        Seating Arrangement {examInfo?.date ? `- ${examInfo.date}` : ""}
+      </h1>
+
+      {/* Program Legend */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        {programs.map((p) => (
+          <div
+            key={p.programCode}
+            className="border rounded px-3 py-1 text-sm font-medium"
+            style={{ backgroundColor: p.color }}
+          >
+            {p.short}: {p.programName}
+          </div>
+        ))}
+      </div>
+
+      {/* Seating Charts */}
+      <div className="space-y-8">
+        {seatingChart.map(({ roomInfo, seating }) => (
+          <div
+            key={roomInfo.roomNo}
+            className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50 shadow-md"
+          >
+            <h2 className="text-lg font-bold mb-4 text-center">
+              Room {roomInfo.roomNo} (Capacity: {roomInfo.seatingCapacity})
+            </h2>
+            <div className="flex flex-col gap-4">
+              {seating.map((sideRows, sideIdx) => (
+                <div key={sideIdx} className="space-y-2">
+                  {sideRows.map((row, rowIdx) => (
+                    <SeatRow
+                      key={rowIdx}
+                      row={row}
+                      seatsPerBench={roomInfo.seatsPerBench}
+                      programs={programs}
+                      getProgramShort={getProgramShort}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-const LoadingSkeleton = () => (
-  <div className="p-4 space-y-4">
-    <Skeleton className="h-8 w-[300px]" />
-    <div className="flex space-x-4">
-      {[...Array(3)].map((_, i) => (
-        <Skeleton key={i} className="h-4 w-[100px]" />
-      ))}
-    </div>
-    <div className="grid grid-cols-3 gap-4">
-      {[...Array(6)].map((_, i) => (
-        <Skeleton key={i} className="h-12 rounded-lg" />
-      ))}
-    </div>
-  </div>
-);
-
-const ErrorDisplay = ({ message }) => (
-  <div className="p-4 bg-red-50 border border-red-200 rounded text-red-600">
-    Error: {message}
-  </div>
-);
-
-const Header = ({ roomInfo }) => (
-  <h2 className="text-lg font-semibold mb-4">
-    {/* Seating Chart for Room {roomInfo.roomNo} */}
-    <span className="text-sm font-normal ml-2">
-      {/* (Capacity: {roomInfo.seatingCapacity}) */}
-    </span>
-  </h2>
-);
-const ProgramLegend = ({ programs }) =>
-  programs.length > 0 && (
-    <div className="flex justify-center gap-4 mb-6 flex-wrap">
-      {programs.map((p) => (
-        <div
-          key={p.code}
-          className="border border-black px-3 py-1 rounded"
-          style={{ backgroundColor: p.color }}
-        >
-          {p.code}: {p.name}
-        </div>
-      ))}
-    </div>
-  );
-
-const SeatingChartDisplay = ({ seatingChart, getProgramShort, programs }) => (
-  <div className="space-y-8">
-    {seatingChart.map(({ roomInfo, seating }, idx) => (
-      <div
-        key={roomInfo.roomNo}
-        className="border-2 border-gray-400 rounded-lg p-4 bg-gray-50 shadow-md"
-      >
-        <h2 className="text-lg font-bold mb-4 text-center">
-          Room {roomInfo.roomNo}
-        </h2>
-        <div className="flex flex-col gap-4">
-          {seating
-            .flat()
-            .filter((row) => row.some((seat) => seat !== null))
-            .map((row, rowIdx) => (
-              <SeatRow
-                key={`room-${roomInfo.roomNo}-row-${rowIdx}`}
-                row={row}
-                getProgramShort={getProgramShort}
-                programs={programs} // ✅ Will now have correct value
-              />
-            ))}
-        </div>
-      </div>
-    ))}
-  </div>
-);
-const SeatRow = ({ row, getProgramShort, programs }) => {
+const SeatRow = ({ row, seatsPerBench, programs, getProgramShort }) => {
   const benches = [];
-  for (let i = 0; i < row.length; i += 2) benches.push(row.slice(i, i + 2));
+  for (let i = 0; i < row.length; i += seatsPerBench) {
+    benches.push(row.slice(i, i + seatsPerBench));
+  }
 
   return (
-    <div className="flex flex-wrap gap-8">
+    <div className="flex gap-4 justify-center flex-wrap">
       {benches.map((bench, benchIdx) => (
         <div
           key={benchIdx}
-          className="border border-green-500 rounded-sm flex w-28 sm:w-32 h-12 items-center justify-around bg-white"
+          className="flex border border-green-400 rounded-sm overflow-hidden"
         >
           {bench.map((seat, seatIdx) => {
-            const code = seat?.assignedStudent?.program?.programCode?.trim();
+            const code = seat?.assignedStudent?.program?.programCode
+              ?.toString()
+              ?.trim();
             const shortCode = code ? getProgramShort(code) : "—";
-            const program = programs.find((p) => p.code === code);
-            // Debug
-            if (seat) {
-              console.log(
-                "Seat program code:",
-                `"${seat.assignedStudent?.program?.programCode}"`,
-                "Trimmed code:",
-                `"${code}"`,
-                "Programs array codes:",
-                programs.map((p) => `"${p.code}"`)
-              );
-            }
+            const program = programs.find(
+              (p) => p.programCode.toString() === code
+            );
 
             return (
               <div
                 key={seatIdx}
-                className="flex-1 flex items-center justify-center text-xs sm:text-sm font-medium rounded-sm"
-                style={{ backgroundColor: program ? program.color : "#f3f4f6" }}
+                className="w-12 h-12 flex items-center justify-center text-sm font-medium"
+                style={{
+                  backgroundColor: program ? program.color : "#f3f4f6",
+                  borderRight:
+                    seatIdx < bench.length - 1 ? "1px solid #ccc" : "",
+                }}
                 title={
                   seat
-                    ? `${
-                        seat.assignedStudent?.program?.programName ||
-                        "No program"
-                      } (ID: ${seat.assignedStudent?.studentId || "N/A"})`
+                    ? `${seat.assignedStudent?.program?.programName} - Roll: ${seat.assignedStudent?.roll}`
                     : "Empty Seat"
                 }
               >
@@ -282,38 +187,19 @@ const SeatRow = ({ row, getProgramShort, programs }) => {
   );
 };
 
-const Desk = ({ seats, getProgramShort }) => (
-  <div className="border border-green-500 rounded-md px-4 py-2 flex gap-6 justify-center min-w-[120px]">
-    {seats?.map((seat, idx) => (
-      <div
-        key={idx}
-        className="text-sm flex items-center justify-center w-10"
-        title={
-          seat
-            ? `${seat.assignedStudent?.program?.programName || "No program"} 
-               (ID: ${seat.assignedStudent?.studentId || "N/A"})`
-            : "Empty Seat"
-        }
-      >
-        {seat
-          ? getProgramShort(seat.assignedStudent?.program?.programCode)
-          : "—"}
-      </div>
-    ))}
+const LoadingSkeleton = () => (
+  <div className="p-4 space-y-4">
+    <Skeleton className="h-8 w-[300px]" />
+    <div className="grid grid-cols-3 gap-4">
+      {[...Array(6)].map((_, i) => (
+        <Skeleton key={i} className="h-12 rounded-lg" />
+      ))}
+    </div>
   </div>
 );
 
-const Seat = ({ seat, getProgramShort }) => (
-  <div
-    className={`border rounded p-2 w-12 h-12 flex items-center justify-center text-sm 
-      ${seat ? "bg-white" : "bg-gray-100"}`}
-    title={
-      seat
-        ? `${seat.assignedStudent?.program?.programName || "No program"} 
-           (ID: ${seat.assignedStudent?.studentId || "N/A"})`
-        : "Empty Seat"
-    }
-  >
-    {seat ? getProgramShort(seat.assignedStudent?.program?.programCode) : "—"}
+const ErrorDisplay = ({ message }) => (
+  <div className="p-4 bg-red-50 border border-red-200 rounded text-red-600">
+    Error: {message}
   </div>
 );

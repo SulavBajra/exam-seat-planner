@@ -11,7 +11,9 @@ public class RoomMapper {
     public static Room toEntity(RoomRequestDTO dto) {
         return new Room(
                 dto.roomNo(),
-                dto.numRow()
+                dto.numRow(),
+                dto.seatsPerBench(),
+                dto.roomColumn()
         );
     }
 
@@ -20,7 +22,8 @@ public class RoomMapper {
                 room.getRoomNo(),
                 room.getSeatingCapacity(),
                 room.getNumRow(),
-                room.getNumColumn()
+                room.getSeatsPerBench(),
+                room.getRoomColumn()
         );
     }
 

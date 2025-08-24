@@ -13,11 +13,9 @@
 
         private int numRow;
 
-        @Transient
-        private final int ROOM_COLUMN =3;
+        private int roomColumn =3;
 
-        @Transient
-        public static final int SEATS_PER_BENCH = 2;
+        private int seatsPerBench = 2;
 
         @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
         @JsonManagedReference
@@ -30,17 +28,19 @@
         public Room() {
         }
 
-        public Room(Integer roomNo, int numRow) {
+        public Room(Integer roomNo, int numRow, int seatsPerBench, int room_column) {
             this.roomNo = roomNo;
             this.numRow = numRow;
+            setSeatsPerBench(seatsPerBench);
+            setRoomColumn(room_column);
         }
 
         public void createRoom() {
             seats.clear();
             int dummyCounter = 1;
             for (int row = 0; row < numRow; row++) {
-                for (int bench = 0; bench < ROOM_COLUMN; bench++) {
-                    for (int seatPos = 0; seatPos < SEATS_PER_BENCH; seatPos++) {
+                for (int bench = 0; bench < roomColumn; bench++) {
+                    for (int seatPos = 0; seatPos < seatsPerBench; seatPos++) {
                         Seat seat = new Seat(row, bench, seatPos, this, null);
                         // Optionally set seatSide if relevant
                         seat.setSeatSide(seatPos);
@@ -58,12 +58,16 @@
             this.seats = seats;
         }
 
-        public int getROOM_COLUMN() {
-            return ROOM_COLUMN;
+        public int getRoomColumn() {
+            return roomColumn;
         }
 
-        public static int getSeatsPerBench() {
-            return SEATS_PER_BENCH;
+        public void setSeatsPerBench(int seatsPerBench){
+            this.seatsPerBench = (seatsPerBench > 0) ? seatsPerBench : 2;
+        }
+
+        public int getSeatsPerBench() {
+            return seatsPerBench;
         }
 
         public Integer getRoomNo() {
@@ -74,8 +78,12 @@
             this.roomNo = roomNo;
         }
 
-        public int getNumColumn() {
-            return ROOM_COLUMN;
+        public void setRoomColumn(int roomColumn){
+            this.roomColumn = (roomColumn > 0) ? roomColumn : 3;
+        }
+
+        public int getROomColumn() {
+            return roomColumn;
         }
 
         public int getNumRow() {
@@ -88,7 +96,7 @@
 
         // Dynamically calculated seating capacity based on rows, columns, and seats per bench
         public int getSeatingCapacity() {
-            return numRow * ROOM_COLUMN * SEATS_PER_BENCH;
+            return numRow * roomColumn * seatsPerBench;
         }
 
         @Override
@@ -96,7 +104,7 @@
             return "Room{" +
                     "roomNo=" + roomNo +
                     ", numRow=" + numRow +
-                    ", NUMCOLUMN=" + ROOM_COLUMN +
+                    ", NUMCOLUMN=" + roomColumn +
                     ", seatingCapacity=" + getSeatingCapacity() +
                     '}';
         }

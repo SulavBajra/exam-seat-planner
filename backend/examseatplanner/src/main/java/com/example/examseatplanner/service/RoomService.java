@@ -8,7 +8,9 @@ import com.example.examseatplanner.model.Seat;
 import com.example.examseatplanner.repository.RoomRepository;
 import com.example.examseatplanner.repository.SeatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +39,10 @@ public class RoomService {
     }
 
     public RoomResponseDTO saveRoom(RoomRequestDTO dto) {
+        if (roomRepository.existsById(dto.roomNo())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Room with roomNo " + dto.roomNo() + " already exists.");
+        }
         Room room = RoomMapper.toEntity(dto);
         Room saved = roomRepository.save(room);
         return RoomMapper.toDTO(saved);

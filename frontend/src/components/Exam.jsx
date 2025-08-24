@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Card,
@@ -13,6 +14,7 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,16 +24,26 @@ import {
   Trash2,
   PlusCircle,
   ChevronRight,
+  Users,
+  BookOpen,
+  Calendar,
+  Hash,
+  User,
+  Building,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 export default function Exam() {
   const [exams, setExams] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [examStudents, setExamStudents] = useState({});
 
   useEffect(() => {
     fetchExams();
@@ -47,6 +59,28 @@ export default function Exam() {
       }
       const data = await response.json();
       setExams(data);
+
+      const studentCounts = {};
+      for (const exam of data) {
+        try {
+          const examResponse = await fetch(
+            `http://localhost:8081/api/exams/students/${exam.id}`
+          );
+          if (examResponse.ok) {
+            const students = await examResponse.json();
+            studentCounts[exam.id] = students;
+          } else {
+            console.error(
+              `Failed to fetch students for exam ${exam.id}: ${examResponse.status}`
+            );
+            studentCounts[exam.id] = 0;
+          }
+        } catch (error) {
+          console.error(`Error fetching students for exam ${exam.id}:`, error);
+          studentCounts[exam.id] = 0;
+        }
+      }
+      setExamStudents(studentCounts);
     } catch (error) {
       console.error(error);
       setError(error.message);
@@ -97,9 +131,14 @@ export default function Exam() {
     }
   };
 
+  const handleViewDetails = (exam) => {
+    setSelectedExam(exam);
+    setDetailsDialogOpen(true);
+  };
+
   const formatDate = (dateString) => {
     try {
-      return format(new Date(dateString), "PP");
+      return format(new Date(dateString), "PPPP");
     } catch {
       return dateString;
     }
@@ -198,56 +237,41 @@ export default function Exam() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium mb-2 text-muted-foreground">
-                    <School className="h-4 w-4" />
-                    Programs
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Programs</span>
                   </div>
-                  <ul className="space-y-3">
-                    {exam.programs.map((program) => (
-                      <li
-                        key={program.programCode}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="font-medium">
-                          {program.programName}
-                        </span>
-                        <Badge variant="outline" className="font-normal">
-                          {program.programCode}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
+                  <Badge variant="secondary">
+                    {exam.programSemesters.length}
+                  </Badge>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium mb-2 text-muted-foreground">
-                    <DoorOpen className="h-4 w-4" />
-                    Rooms
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <DoorOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Rooms</span>
                   </div>
-                  <ul className="space-y-3">
-                    {exam.rooms.map((room) => (
-                      <li
-                        key={room.roomNo}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="font-medium">Room {room.roomNo}</span>
-                        <Badge variant="secondary">
-                          {room.seatingCapacity} seats
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
+                  <Badge variant="secondary">{exam.roomNames.length}</Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Total Students</span>
+                  </div>
+                  <Badge variant="outline">{examStudents[exam.id] || 0}</Badge>
                 </div>
               </CardContent>
-              <div className="px-6 pb-4">
+              <CardFooter>
                 <Button
                   variant="outline"
                   className="w-full group-hover:bg-accent"
+                  onClick={() => handleViewDetails(exam)}
                 >
                   View Details <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
-              </div>
+              </CardFooter>
             </Card>
           ))}
         </div>
@@ -267,6 +291,134 @@ export default function Exam() {
           </CardContent>
         </Card>
       )}
+
+      {/* Enhanced Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Calendar className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl">
+                  Exam Schedule Details
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  {selectedExam && formatDate(selectedExam.date)}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {selectedExam && (
+            <div className="space-y-6">
+              {/* Summary Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {selectedExam.programSemesters.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Programs</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <Building className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {selectedExam.roomNames.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Rooms</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <User className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {examStudents[selectedExam.id] || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Students</div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Programs Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <School className="h-5 w-5 text-blue-600" />
+                  Programs Information
+                </h3>
+                <div className="space-y-3">
+                  {selectedExam.programSemesters.map((program, index) => (
+                    <div
+                      key={`${program.programCode}-${program.semester}`}
+                      className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <div className="font-medium flex items-center gap-2">
+                            <Hash className="h-4 w-4 text-muted-foreground" />
+                            {program.programName}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Code: {program.programCode} | Semester:{" "}
+                            {program.semesterName}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="ml-2">
+                          {program.studentCount} students
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Rooms Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <DoorOpen className="h-5 w-5 text-green-600" />
+                  Assigned Rooms
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {selectedExam.roomNames.map((room, index) => (
+                    <div
+                      key={room}
+                      className="p-3 border rounded-lg text-center hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="font-medium">Room {room}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total Students Summary */}
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-6 w-6 text-primary" />
+                    <div>
+                      <div className="font-semibold">Total Students</div>
+                      <div className="text-sm text-muted-foreground">
+                        Across all programs
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-lg px-3 py-1">
+                    {examStudents[selectedExam.id] || 0} students
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

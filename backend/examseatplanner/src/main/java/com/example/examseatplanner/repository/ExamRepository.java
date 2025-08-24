@@ -1,5 +1,6 @@
 package com.example.examseatplanner.repository;
 
+import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.model.Room;
@@ -14,7 +15,6 @@ import java.util.List;
 @Repository
 public interface ExamRepository extends JpaRepository<Exam, Integer> {
 
-    // Basic date queries
     List<Exam> findByDate(LocalDate date);
     List<Exam> findByDateBetween(LocalDate startDate, LocalDate endDate);
 

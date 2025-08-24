@@ -57,7 +57,7 @@ public class SeatAllocationDTOService {
             for (int rowIndex = 0; rowIndex < room.getNumRow(); rowIndex++) {
                 List<SeatDTO> rowSeats = new ArrayList<>();
 
-                for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
+                for (int seatIndex = 0; seatIndex < room.getROomColumn() * room.getSeatsPerBench(); seatIndex++) {
                     Seat seat = seats[sideIndex][rowIndex][seatIndex];
                     SeatDTO seatDTO = convertSeatToDTO(seat);
                     rowSeats.add(seatDTO);
@@ -72,7 +72,7 @@ public class SeatAllocationDTOService {
         return new RoomSeatingDTO(
                 room.getRoomNo(),
                 room.getNumRow(),
-                room.getNumColumn(),
+                room.getROomColumn(),
                 room.getSeatingCapacity(),
                 sides
         );
@@ -116,7 +116,7 @@ public class SeatAllocationDTOService {
         int count = 0;
         for (int side = 0; side < 3; side++) {
             for (int row = 0; row < room.getNumRow(); row++) {
-                for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
+                for (int seatIndex = 0; seatIndex < room.getROomColumn() * room.getSeatsPerBench(); seatIndex++) {
                     if (seats[side][row][seatIndex] != null &&
                             seats[side][row][seatIndex].getAssignedStudent() != null) {
                         count++;
@@ -144,11 +144,11 @@ public class SeatAllocationDTOService {
             for (int row = 0; row < room.getNumRow(); row++) {
                 viz.append(String.format("Row %d: ", row + 1));
 
-                for (int bench = 0; bench < room.getNumColumn(); bench++) {
+                for (int bench = 0; bench < room.getROomColumn(); bench++) {
                     viz.append("[");
 
-                    for (int position = 0; position < Room.SEATS_PER_BENCH; position++) {
-                        int seatIndex = bench * Room.SEATS_PER_BENCH + position;
+                    for (int position = 0; position < room.getSeatsPerBench(); position++) {
+                        int seatIndex = bench * room.getSeatsPerBench() + position;
                         Seat seat = seats[side][row][seatIndex];
 
                         if (seat != null && seat.getAssignedStudent() != null) {
@@ -160,7 +160,7 @@ public class SeatAllocationDTOService {
                             viz.append("Empty");
                         }
 
-                        if (position < Room.SEATS_PER_BENCH - 1) {
+                        if (position <room.getSeatsPerBench() - 1) {
                             viz.append("|");
                         }
                     }
@@ -197,7 +197,7 @@ public class SeatAllocationDTOService {
 
             for (int side = 0; side < 3; side++) {
                 for (int row = 0; row < room.getNumRow(); row++) {
-                    for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
+                    for (int seatIndex = 0; seatIndex < room.getROomColumn() *room.getSeatsPerBench(); seatIndex++) {
                         Seat seat = seats[side][row][seatIndex];
                         if (seat != null && seat.getAssignedStudent() != null) {
                             occupiedSeats++;

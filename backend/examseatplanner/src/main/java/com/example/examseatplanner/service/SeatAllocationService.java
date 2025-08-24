@@ -1,9 +1,6 @@
     package com.example.examseatplanner.service;
     
-    import com.example.examseatplanner.dto.RoomSeatingDTO;
-    import com.example.examseatplanner.dto.RowSeatingDTO;
-    import com.example.examseatplanner.dto.SeatDTO;
-    import com.example.examseatplanner.dto.SideSeatingDTO;
+    import com.example.examseatplanner.dto.*;
     import com.example.examseatplanner.model.*;
     import com.example.examseatplanner.repository.SeatRepository;
     import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +26,7 @@
         }
     
         public Map<String, List<SeatDTO>> getSeatAssignments(Integer examId) {
-            Optional<Exam> examOpt = examService.getExamById(examId);
+            Optional<Exam> examOpt = examService.getExamEntityById(examId);
             if (examOpt.isEmpty()) {
                 return new HashMap<>();
             }
@@ -50,15 +47,13 @@
         }
     
         public Map<String, List<SeatDTO>> getSeatAssignmentsByExamId(Integer examId) {
-            // Fetch seats assigned for the given examId
-            // Note: Make sure your SeatRepository has this method implemented properly
+
             List<Seat> seats = seatRepository.findByExamId(examId);
     
             Map<String, List<SeatDTO>> assignmentsByRoom = new HashMap<>();
     
             for (Seat seat : seats) {
                 if (seat.getRoom() == null) continue; // Defensive null check
-    
                 String roomNumber = seat.getRoom().getRoomNo()+"";
     
                 SeatDTO dto = SeatDTO.fromEntity(seat);
@@ -103,7 +98,7 @@
                 Seat[][][] seats = generate3DSeatArray(room);
                 int sides = 3;
                 int rows = room.getNumRow();
-                int columns = room.getNumColumn();
+                int columns = room.getROomColumn();
 
                 boolean studentsLeft = !studentsByProgram.isEmpty();
 
@@ -111,7 +106,7 @@
                 for (int side = 0; side < sides && studentsLeft; side++) {
                     for (int row = 0; row < rows && studentsLeft; row++) {
                         for (int bench = 0; bench < columns && studentsLeft; bench++) {
-                            for (int pos = 0; pos < Room.SEATS_PER_BENCH && studentsLeft; pos++) {
+                            for (int pos = 0; pos < room.getSeatsPerBench() && studentsLeft; pos++) {
                                 // Rotate through programs to alternate students
                                 Student studentToAssign = null;
                                 Iterator<Integer> programIterator = programOrder.iterator();
@@ -135,7 +130,7 @@
                                 }
 
                                 // Assign student to seat
-                                Seat seat = seats[side][row][bench * Room.SEATS_PER_BENCH + pos];
+                                Seat seat = seats[side][row][bench * room.getSeatsPerBench() + pos];
                                 seat.setAssignedStudent(studentToAssign);
                                 seat.setRoom(room);
                                 seatRepository.save(seat);
@@ -171,17 +166,17 @@
     
                 int sides = 3;
                 int rows = room.getNumRow();
-                int columns = room.getNumColumn();
+                int columns = room.getROomColumn();
 
                 outer:
                 for (int side = 0; side < sides; side++) {
                     for (int row = 0; row < rows; row++) {
                         for (int bench = 0; bench < columns; bench++) {
-                            for (int pos = 0; pos < Room.SEATS_PER_BENCH; pos++) {
+                            for (int pos = 0; pos < room.getSeatsPerBench(); pos++) {
                                 if (studentIndex >= totalStudents) {
                                     break outer;
                                 }
-                                Seat seat = seats[side][row][bench * Room.SEATS_PER_BENCH + pos];
+                                Seat seat = seats[side][row][bench * room.getSeatsPerBench() + pos];
                                 Student student = allStudents.get(studentIndex);
                                 seat.setAssignedStudent(student);
                                 seatRepository.save(seat);
@@ -215,20 +210,20 @@
          * Dimensions: [sides][rows][seats_per_row]
          * sides = 3 (Left, Middle, Right)
          * rows = room.getNumRow()
-         * seats_per_row = room.getNumColumn() * SEATS_PER_BENCH
+         * seats_per_row = room.getROomColumn() * SEATS_PER_BENCH
          */
         private Seat[][][] generate3DSeatArray(Room room) {
             int sides = 3; // Left (0), Middle (1), Right (2)
             int rows = room.getNumRow();
-            int seatsPerRow = room.getNumColumn() * Room.SEATS_PER_BENCH;
+            int seatsPerRow = room.getROomColumn() * room.getSeatsPerBench();
     
             Seat[][][] seatArray = new Seat[sides][rows][seatsPerRow];
     
             for (int side = 0; side < sides; side++) {
                 for (int row = 0; row < rows; row++) {
                     for (int seatInRow = 0; seatInRow < seatsPerRow; seatInRow++) {
-                        int benchNumber = seatInRow / Room.SEATS_PER_BENCH;
-                        int seatPosition = seatInRow % Room.SEATS_PER_BENCH;
+                        int benchNumber = seatInRow / room.getSeatsPerBench();
+                        int seatPosition = seatInRow % room.getSeatsPerBench();
     
                         Seat seat = new Seat();
                         seat.setRowNumber(row);
@@ -247,7 +242,7 @@
         }
     
         public List<RoomSeatingDTO> getRoomSeatingInfo(Integer examId) {
-            Optional<Exam> examOpt = examService.getExamById(examId);
+            Optional<Exam> examOpt = examService.getExamEntityById(examId);
             if (examOpt.isEmpty()) return Collections.emptyList();
     
             Exam exam = examOpt.get();
@@ -287,7 +282,7 @@
                 result.add(new RoomSeatingDTO(
                         room.getRoomNo(),
                         room.getNumRow(),
-                        room.getNumColumn(),
+                        room.getROomColumn(),
                         room.getSeatingCapacity(),
                         sides
                 ));
@@ -361,14 +356,14 @@
         private Seat[][][] organizeSeatsByPosition(Room room, List<Seat> seats) {
             int sides = 3;
             int rows = room.getNumRow();
-            int seatsPerRow = room.getNumColumn() * Room.SEATS_PER_BENCH;
+            int seatsPerRow = room.getROomColumn() * room.getSeatsPerBench();
     
             Seat[][][] seatArray = new Seat[sides][rows][seatsPerRow];
     
             for (Seat seat : seats) {
                 int side = seat.getSeatSide();
                 int row = seat.getRowNumber();
-                int seatIndex = seat.getBenchNumber() * Room.SEATS_PER_BENCH + seat.getSeatPosition();
+                int seatIndex = seat.getBenchNumber() * room.getSeatsPerBench() + seat.getSeatPosition();
     
                 if (side < sides && row < rows && seatIndex < seatsPerRow) {
                     seatArray[side][row][seatIndex] = seat;
@@ -405,7 +400,7 @@
                 // Check for adjacent students from same program
                 for (int side = 0; side < 3; side++) {
                     for (int row = 0; row < room.getNumRow(); row++) {
-                        for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH - 1; seatIndex++) {
+                        for (int seatIndex = 0; seatIndex < room.getROomColumn() * room.getSeatsPerBench() - 1; seatIndex++) {
                             Seat currentSeat = seats[side][row][seatIndex];
                             Seat nextSeat = seats[side][row][seatIndex + 1];
     

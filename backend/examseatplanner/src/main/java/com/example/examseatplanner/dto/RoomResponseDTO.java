@@ -4,5 +4,6 @@ public record RoomResponseDTO(
         Integer roomNo,
         int seatingCapacity,
         int numRow,
-        int numColumn
+        int seatsPerBench,
+        int roomColumn
 ) {}

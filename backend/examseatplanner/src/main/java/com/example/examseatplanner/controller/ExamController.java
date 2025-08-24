@@ -34,15 +34,15 @@ public class ExamController {
     }
 
     @GetMapping
-    public List<Exam> getAllExams() {
+    public List<ExamResponseDTO> getAllExams() {
         return examService.getAllExams();
     }
 
     @GetMapping("/{examId}")
-    public ResponseEntity<Exam> getExamById(@PathVariable Integer examId) {
+    public ResponseEntity<ExamResponseDTO> getExamById(@PathVariable Integer examId) {
         return examService.getExamById(examId)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(()-> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/rooms/{examId}")
@@ -81,6 +81,11 @@ public class ExamController {
     @GetMapping("/{roomNo}/is-booked")
     public boolean isRoomBooked(@PathVariable Integer roomNo) {
         return examService.isRoomBooked(roomNo);
+    }
+
+    @GetMapping("/students/{examId}")
+    public Long getNumberOfStudents(@PathVariable Integer examId) {
+        return examService.getTotalStudentsForExam(examId);
     }
 
 

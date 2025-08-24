@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 
-const SEATS_PER_BENCH = 2;
-const BENCH_SIDES = ["Left", "Middle", "Right"];
-
 export default function SeatingArrangement() {
   const { examId } = useParams();
   const [loading, setLoading] = useState(false);
@@ -91,18 +88,17 @@ export default function SeatingArrangement() {
   });
 
   const renderRoom = (room) => {
-    const { numRow } = room;
-    const numCols = BENCH_SIDES.length * SEATS_PER_BENCH;
+    const { numRow, roomColumn, seatsPerBench } = room;
+    const numCols = roomColumn * seatsPerBench;
+
     const roomRows = Array.from({ length: numRow }, () =>
       Array(numCols).fill(null)
     );
 
     for (let col = 0; col < numCols; col++) {
-      // iterate column first
       for (let row = 0; row < numRow; row++) {
-        // then row
-        // Pick a student whose program is NOT the same as left neighbor
         let chosenStudent = null;
+
         for (let program of sortedPrograms) {
           const queue = programQueues[program.programCode];
           if (queue.length === 0) continue;
@@ -112,7 +108,7 @@ export default function SeatingArrangement() {
             !leftNeighbor ||
             leftNeighbor.programCode !== program.programCode
           ) {
-            chosenStudent = queue.shift(); // remove from global queue
+            chosenStudent = queue.shift();
             break;
           }
         }
@@ -126,21 +122,32 @@ export default function SeatingArrangement() {
         <h2 className="font-bold mb-2">Room {room.roomNo}</h2>
         {roomRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-2 mb-1">
-            {row.map((student, seatIndex) =>
-              student ? (
+            {row.reduce((acc, student, idx) => {
+              acc.push(
                 <div
-                  key={seatIndex}
-                  className="border p-2.5 w-25 h-10 text-center text-sm"
+                  key={idx}
+                  className={`border-2 border-blue-600 p-2.5 w-28 h-10 text-center text-sm ${
+                    student ? "bg-white" : "bg-gray-100"
+                  }`}
                 >
-                  {student.programCode}- {student.semester}- {student.roll}
+                  {student
+                    ? `${student.programCode}-${student.semester}-${student.roll}`
+                    : ""}
                 </div>
-              ) : (
-                <div
-                  key={seatIndex}
-                  className="border p-2.5 w-20 h-10 bg-gray-100"
-                ></div>
-              )
-            )}
+              );
+
+              // Add a visible gap after each bench
+              if ((idx + 1) % seatsPerBench === 0 && idx !== row.length - 1) {
+                acc.push(
+                  <div
+                    key={`gap-${idx}`}
+                    className="w-4 border-r-2 border-transparent"
+                  ></div>
+                );
+              }
+
+              return acc;
+            }, [])}
           </div>
         ))}
       </div>
@@ -176,7 +183,7 @@ export default function SeatingArrangement() {
         {examData.rooms.map((room) => renderRoom(room))}
       </div>
 
-      {/* Improved Legend Section on the right */}
+      {/* Legend Section */}
       <div className="md:w-64 lg:w-80">
         <div className="sticky top-4 bg-white p-4 rounded-lg shadow-md border border-gray-200">
           <h3 className="text-lg font-semibold mb-3 pb-2 border-b border-gray-200">

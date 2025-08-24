@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
 //        }
 //
 //        // 1. Create Rooms and explain capacity
-//        Room room101 = createRoom(101, 4); // 2 rows, 3 columns
+//        Room room101 = createRoom(); // 2 rows, 3 columns
 ////        room101.createRoom();
 //        Room room102 = createRoom(102, 3); // 3 rows, 2 columns
 ////        room102.createRoom();
@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
 //            int baseCapacity = room.getSeatingCapacity(); // rows * columns * 2 seats per bench
 //            int total3DCapacity = baseCapacity * 3; // 3 sides (Left, Middle, Right)
 //            System.out.printf("   Room %d: %d rows × %d cols × 2 seats × 3 sides = %d total seats%n",
-//                    room.getRoomNo(), room.getNumRow(), room.getNumColumn(), total3DCapacity);
+//                    room.getRoomNo(), room.getNumRow(), room.getROomColumn(), total3DCapacity);
 //        }
 //
 //        int totalSystemCapacity = rooms.stream()
@@ -203,7 +203,7 @@ public class DataInitializer implements CommandLineRunner {
 //            Seat[][][] seats = entry.getValue();
 //
 //            System.out.printf("\n🏢 ROOM %d Layout (%d rows × %d columns)%n",
-//                    room.getRoomNo(), room.getNumRow(), room.getNumColumn());
+//                    room.getRoomNo(), room.getNumRow(), room.getROomColumn());
 //            System.out.println("-".repeat(80));
 //
 //            displayRoomLayout(room, seats);
@@ -223,13 +223,13 @@ public class DataInitializer implements CommandLineRunner {
 //            for (int row = 0; row < room.getNumRow(); row++) {
 //                System.out.printf("│ Row %d: ", row + 1);
 //
-//                for (int bench = 0; bench < room.getNumColumn(); bench++) {
+//                for (int bench = 0; bench < room.getROomColumn(); bench++) {
 //                    System.out.print("[");
 //
 //                    for (int position = 0; position < Room.SEATS_PER_BENCH; position++) {
 //                        int seatIndex = bench * Room.SEATS_PER_BENCH + position;
 //
-//                        if (seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH &&
+//                        if (seatIndex < room.getROomColumn() * Room.SEATS_PER_BENCH &&
 //                                seats[side][row][seatIndex] != null) {
 //
 //                            Seat seat = seats[side][row][seatIndex];
@@ -255,7 +255,7 @@ public class DataInitializer implements CommandLineRunner {
 //
 //                // Fill remaining space for alignment
 //                int usedLength = String.format("│ Row %d: ", row + 1).length() +
-//                        (room.getNumColumn() * (Room.SEATS_PER_BENCH * 4 + 1 + 2)); // brackets and separators
+//                        (room.getROomColumn() * (Room.SEATS_PER_BENCH * 4 + 1 + 2)); // brackets and separators
 //                int padding = 77 - usedLength;
 //                if (padding > 0) {
 //                    System.out.print(" ".repeat(padding));
@@ -339,11 +339,11 @@ public class DataInitializer implements CommandLineRunner {
 //
 //            for (int side = 0; side < 3; side++) {
 //                int occupiedInSection = 0;
-//                int totalInSection = room.getNumRow() * room.getNumColumn() * Room.SEATS_PER_BENCH;
+//                int totalInSection = room.getNumRow() * room.getROomColumn() * Room.SEATS_PER_BENCH;
 //
 //                // Count occupied seats in this section
 //                for (int row = 0; row < room.getNumRow(); row++) {
-//                    for (int seatIndex = 0; seatIndex < room.getNumColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
+//                    for (int seatIndex = 0; seatIndex < room.getROomColumn() * Room.SEATS_PER_BENCH; seatIndex++) {
 //                        if (seats[side][row][seatIndex] != null &&
 //                                seats[side][row][seatIndex].getAssignedStudent() != null) {
 //                            occupiedInSection++;

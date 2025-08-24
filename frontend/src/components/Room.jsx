@@ -16,6 +16,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -27,6 +29,11 @@ export default function Room() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomDetails, setRoomDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    isOpen: false,
+    roomNo: null,
+    isBooked: false,
+  });
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -81,25 +88,37 @@ export default function Room() {
       setDetailsLoading(false);
     }
   };
-  const handleRemoveRoom = async (roomNo) => {
+
+  const handleRemoveRoomClick = async (roomNo) => {
     try {
-      // Check if the room is booked
       const bookedRes = await fetch(
-        `http://localhost:8081/api/rooms/${roomNo}/is-booked`
+        `http://localhost:8081/api/exams/${roomNo}/is-booked`
       );
       if (!bookedRes.ok) throw new Error("Failed to check room status");
       const isBooked = await bookedRes.json();
 
       if (isBooked) {
-        toast.error(
-          `Cannot remove Room ${roomNo} because it is assigned to an exam`
-        );
-        return;
+        setDeleteConfirmation({
+          isOpen: true,
+          roomNo,
+          isBooked: true,
+        });
+      } else {
+        setDeleteConfirmation({
+          isOpen: true,
+          roomNo,
+          isBooked: false,
+        });
       }
+    } catch (error) {
+      console.error("Error checking room status:", error);
+      toast.error("Failed to check room status");
+    }
+  };
 
-      if (!confirm(`Are you sure you want to remove Room ${roomNo}?`)) return;
-
-      // Proceed with delete
+  const confirmDeleteRoom = async () => {
+    const { roomNo } = deleteConfirmation;
+    try {
       const response = await fetch(
         `http://localhost:8081/api/rooms/${roomNo}`,
         {
@@ -113,12 +132,25 @@ export default function Room() {
       setRooms((prev) => prev.filter((room) => room.roomNo !== roomNo));
 
       if (selectedRoom === roomNo) handleCloseDetails();
-
       toast.success(`Room ${roomNo} deleted successfully`);
     } catch (error) {
       console.error("Error deleting room:", error);
       toast.error(`Failed to delete Room ${roomNo}`);
+    } finally {
+      setDeleteConfirmation({
+        isOpen: false,
+        roomNo: null,
+        isBooked: false,
+      });
     }
+  };
+
+  const cancelDeleteRoom = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      roomNo: null,
+      isBooked: false,
+    });
   };
 
   return (
@@ -191,7 +223,7 @@ export default function Room() {
                   className="text-red-500 hover:bg-red-50"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveRoom(room.roomNo);
+                    handleRemoveRoomClick(room.roomNo);
                   }}
                 >
                   Remove
@@ -223,38 +255,95 @@ export default function Room() {
       )}
 
       <Dialog open={!!selectedRoom} onOpenChange={handleCloseDetails}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Room {selectedRoom} Details</span>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <DoorOpen className="h-5 w-5 text-blue-600" />
+              Room {selectedRoom} Details
             </DialogTitle>
+            <DialogDescription>
+              Overview of room capacity and seating arrangement
+            </DialogDescription>
           </DialogHeader>
+
           {detailsLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-4 mt-4">
               <Skeleton className="h-6 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-1/2" />
             </div>
           ) : roomDetails ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Room Number:</span>
-                <span>{roomDetails.roomNo}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Student Capacity:</span>
-                <Badge variant="secondary">
-                  {roomDetails.seatingCapacity} students
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Rows:</span>
-                <Badge variant="secondary">{roomDetails.numRow} rows</Badge>
-              </div>
+            <div className="mt-4 space-y-3">
+              {[
+                { label: "Room Number", value: roomDetails.roomNo },
+                {
+                  label: "Student Capacity",
+                  value: roomDetails.seatingCapacity + " students",
+                },
+                { label: "Rows", value: roomDetails.numRow + " rows" },
+                {
+                  label: "Seats Per Bench",
+                  value: roomDetails.seatsPerBench + " students",
+                },
+                { label: "Room Column", value: roomDetails.roomColumn },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex justify-between items-center p-3 bg-gray-50 rounded-md border border-gray-200"
+                >
+                  <span className="text-gray-700 font-medium">
+                    {item.label}
+                  </span>
+                  <Badge variant="secondary">{item.value}</Badge>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="text-center py-4">No details available</div>
+            <div className="text-center py-4 text-gray-500">
+              No details available
+            </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) cancelDeleteRoom();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              {deleteConfirmation.isBooked ? (
+                <div className="text-red-600 font-medium py-2">
+                  Cannot remove Room {deleteConfirmation.roomNo} because it is
+                  assigned to an exam.
+                </div>
+              ) : (
+                <div>
+                  Are you sure you want to remove Room{" "}
+                  {deleteConfirmation.roomNo}? This action cannot be undone.
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            {deleteConfirmation.isBooked ? (
+              <Button onClick={cancelDeleteRoom}>OK</Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={cancelDeleteRoom}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmDeleteRoom}>
+                  Delete
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -19,7 +19,7 @@
 //
 //    public void allocateSeats(Room room, Map<Program, List<Student>> programStudentMap) {
 //        int numRows = room.getNumRow();        // e.g., 2 rows
-//        int numColumns = room.getNumColumn();  // e.g., 3 benches
+//        int numColumns = room.getROomColumn();  // e.g., 3 benches
 //
 //        List<Program> programs = programStudentMap.keySet().stream().toList();
 //

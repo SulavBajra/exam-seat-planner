@@ -16,10 +16,6 @@ public class Exam {
     @Column(name = "exam_id")
     private Integer id;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "semester")
-//    private Student.Semester semester;
-
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<ExamProgramSemester> programSemesters = new ArrayList<>();
