@@ -79,7 +79,6 @@ export default function SeatingArrangement() {
     };
   });
 
-  // Create a global queue of students per program BEFORE rendering any room
   const programQueues = {};
   sortedPrograms.forEach((program) => {
     programQueues[program.programCode] = [

@@ -4,7 +4,6 @@ import com.example.examseatplanner.dto.*;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.repository.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +14,6 @@ public class ExamDataService {
     private ExamRepository examRepository;
     private StudentRepository studentRepository;
 
-    @Autowired
     public ExamDataService(ExamRepository examRepository,
                            StudentRepository studentRepository){
         this.examRepository = examRepository;

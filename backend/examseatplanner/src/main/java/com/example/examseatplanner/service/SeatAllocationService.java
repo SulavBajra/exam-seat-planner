@@ -3,7 +3,6 @@
     import com.example.examseatplanner.dto.*;
     import com.example.examseatplanner.model.*;
     import com.example.examseatplanner.repository.SeatRepository;
-    import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.stereotype.Service;
     
     import java.util.*;
@@ -16,7 +15,6 @@
         private final StudentService studentService;
         private final ExamService examService;
     
-        @Autowired
         public SeatAllocationService(SeatRepository seatRepository,
                                      StudentService studentService,
                                      ExamService examService) {
@@ -291,53 +289,6 @@
             return result;
         }
     
-    
-    
-        /**
-         * Creates an optimal student sequence with program alternation
-         * This prevents students from the same program sitting adjacent to each other
-         */
-        private List<Student> createOptimalStudentSequence(List<Student> allStudents, List<Program> programs) {
-            // Group students by program and sort by roll
-            Map<Integer, Queue<Student>> studentsByProgram = new HashMap<>();
-            for (Student student : allStudents) {
-                studentsByProgram
-                        .computeIfAbsent(student.getProgram().getProgramCode(), k -> new LinkedList<>())
-                        .add(student);
-            }
-            for (Queue<Student> queue : studentsByProgram.values()) {
-                List<Student> sorted = queue.stream()
-                        .sorted(Comparator.comparingInt(Student::getRoll))
-                        .toList();
-                queue.clear();
-                queue.addAll(sorted);
-            }
-    
-            // Alternate programs
-            List<Student> sequence = new ArrayList<>();
-            List<Integer> programCodes = new ArrayList<>(studentsByProgram.keySet());
-    
-            while (!studentsByProgram.isEmpty()) {
-                Iterator<Integer> programIterator = programCodes.iterator();
-                while (programIterator.hasNext()) {
-                    Integer programCode = programIterator.next();
-                    Queue<Student> queue = studentsByProgram.get(programCode);
-                    if (queue != null && !queue.isEmpty()) {
-                        sequence.add(queue.poll());
-                        if (queue.isEmpty()) {
-                            studentsByProgram.remove(programCode);
-                            programIterator.remove();
-                        }
-                    }
-                }
-            }
-            return sequence;
-        }
-    
-    
-        /**
-         * Gets the seating chart for a specific exam
-         */
         public Map<Room, Seat[][][]> getSeatingChart(Exam exam) {
             Map<Room, Seat[][][]> seatingChart = new HashMap<>();
     
@@ -349,10 +300,7 @@
     
             return seatingChart;
         }
-    
-        /**
-         * Organizes seats from database into 3D array structure
-         */
+        
         private Seat[][][] organizeSeatsByPosition(Room room, List<Seat> seats) {
             int sides = 3;
             int rows = room.getNumRow();

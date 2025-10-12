@@ -114,7 +114,6 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
     e.preventDefault();
     setIsLoading((prev) => ({ ...prev, submitting: true }));
 
-    // Validate date is in the future
     const today = getTodayDate();
     if (formData.date < today) {
       toast.error("Please select a future date");
@@ -181,7 +180,6 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
           </p>
         </div>
 
-        {/* Programs Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2">
@@ -266,7 +264,6 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
           )}
         </div>
 
-        {/* Rooms Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2">
@@ -344,7 +341,6 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
         </div>
       </div>
 
-      {/* Sticky Footer */}
       <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
         <div className="flex justify-end gap-2">
           <Button

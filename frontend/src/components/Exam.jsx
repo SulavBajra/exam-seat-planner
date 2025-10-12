@@ -353,7 +353,7 @@ export default function Exam() {
                   Programs Information
                 </h3>
                 <div className="space-y-3">
-                  {selectedExam.programSemesters.map((program, index) => (
+                  {selectedExam.programSemesters.map((program) => (
                     <div
                       key={`${program.programCode}-${program.semester}`}
                       className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -387,7 +387,7 @@ export default function Exam() {
                   Assigned Rooms
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {selectedExam.roomNames.map((room, index) => (
+                  {selectedExam.roomNames.map((room) => (
                     <div
                       key={room}
                       className="p-3 border rounded-lg text-center hover:bg-muted/50 transition-colors"

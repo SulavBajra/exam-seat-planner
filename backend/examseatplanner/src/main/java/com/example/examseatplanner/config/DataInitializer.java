@@ -2,12 +2,10 @@ package com.example.examseatplanner.config;
 
 import com.example.examseatplanner.model.*;
 import com.example.examseatplanner.repository.*;
-import com.example.examseatplanner.service.SeatAllocationService;
-import com.example.examseatplanner.service.SeatAllocationDTOService;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.*;
 
 @Component

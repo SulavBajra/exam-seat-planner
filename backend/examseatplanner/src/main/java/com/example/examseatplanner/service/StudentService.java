@@ -12,7 +12,6 @@ import com.example.examseatplanner.repository.StudentRepository;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +27,6 @@ public class StudentService {
     private final ProgramRepository programRepository;
     private final StudentMapper studentMapper;
 
-    @Autowired
     public StudentService(StudentRepository studentRepository,
                           ProgramRepository programRepository,
                           StudentMapper studentMapper) {
@@ -68,7 +66,7 @@ public class StudentService {
     }
 
     public Optional<Student> getStudentById(String studentId) {
-        return studentRepository.findById(studentId);
+        return studentRepository.findByStudentId(Integer.parseInt(studentId));
     }
 
     public Student saveStudent(Student student) {
@@ -76,7 +74,7 @@ public class StudentService {
     }
 
     public void deleteStudent(String studentId) {
-        studentRepository.deleteById(studentId);
+        studentRepository.deleteById(Integer.parseInt(studentId));
     }
 
     public List<Student> getStudentsByPrograms(List<Program> programs) {
@@ -152,7 +150,7 @@ public class StudentService {
     }
 
     public StudentResponseDTO updateStudent(String studentId, StudentRequestDTO dto) {
-        Student student = studentRepository.findById(studentId)
+        Student student = studentRepository.findByStudentId(Integer.parseInt(studentId))
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         Program program = programRepository.findByProgramCode(dto.programCode())

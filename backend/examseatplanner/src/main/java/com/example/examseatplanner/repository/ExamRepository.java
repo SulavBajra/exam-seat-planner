@@ -1,9 +1,7 @@
 package com.example.examseatplanner.repository;
 
-import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
-import com.example.examseatplanner.model.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

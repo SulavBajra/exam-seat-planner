@@ -12,7 +12,6 @@ import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.RoomRepository;
 import com.example.examseatplanner.repository.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,7 +26,6 @@ public class ExamService {
     private final RoomRepository roomRepository;
     private final StudentRepository studentRepository;
 
-    @Autowired
     public ExamService(ExamRepository examRepository,
                        ProgramRepository programRepository,
                        RoomRepository roomRepository,

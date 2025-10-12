@@ -3,7 +3,6 @@ package com.example.examseatplanner.controller;
 import com.example.examseatplanner.dto.ProgramRequestDTO;
 import com.example.examseatplanner.dto.ProgramResponseDTO;
 import com.example.examseatplanner.service.ProgramService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +14,6 @@ public class ProgramController {
 
     private final ProgramService programService;
 
-    @Autowired
     public ProgramController(ProgramService programService) {
         this.programService = programService;
     }

@@ -9,7 +9,6 @@ import com.example.examseatplanner.service.ExamService;
 import com.example.examseatplanner.service.SeatAllocationService;
 import com.example.examseatplanner.service.SeatAllocationService.SeatAllocationResult;
 import com.example.examseatplanner.service.SeatAllocationDTOService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +24,6 @@ public class SeatAllocationController {
     private final ExamService examService;
     private final SeatAllocationDTOService dtoService;
 
-    @Autowired
     public SeatAllocationController(SeatAllocationService seatAllocationService,
                                     ExamService examService,
                                     SeatAllocationDTOService dtoService) {

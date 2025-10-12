@@ -4,10 +4,7 @@ import com.example.examseatplanner.dto.RoomRequestDTO;
 import com.example.examseatplanner.dto.RoomResponseDTO;
 import com.example.examseatplanner.mapper.RoomMapper;
 import com.example.examseatplanner.model.Room;
-import com.example.examseatplanner.model.Seat;
 import com.example.examseatplanner.repository.RoomRepository;
-import com.example.examseatplanner.repository.SeatRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,7 +17,6 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
 
-    @Autowired
     public RoomService(RoomRepository roomRepository){
         this.roomRepository = roomRepository;
     }

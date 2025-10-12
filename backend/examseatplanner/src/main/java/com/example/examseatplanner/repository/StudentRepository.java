@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StudentRepository extends JpaRepository<Student, String> {
+public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     /**
      * Find students by program
@@ -32,6 +32,8 @@ public interface StudentRepository extends JpaRepository<Student, String> {
         )
     """)
     Long countStudentsForExam(@Param("examId") Integer examId);
+
+    Optional<Student> findByStudentId(Integer studentId);
 
     List<Student> findByProgram(Program program);
 

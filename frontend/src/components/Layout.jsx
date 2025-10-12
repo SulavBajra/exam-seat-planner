@@ -11,9 +11,6 @@ export default function Layout() {
       <main className="flex-grow p-4 container mx-auto">
         <Outlet />
       </main>
-      <footer className="p-4 border-t text-center text-sm text-gray-500">
-        Exam Seating System © {new Date().getFullYear()}
-      </footer>
     </div>
   );
 }

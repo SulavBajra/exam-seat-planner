@@ -37,7 +37,6 @@
 
         public void createRoom() {
             seats.clear();
-            int dummyCounter = 1;
             for (int row = 0; row < numRow; row++) {
                 for (int bench = 0; bench < roomColumn; bench++) {
                     for (int seatPos = 0; seatPos < seatsPerBench; seatPos++) {

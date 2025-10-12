@@ -1,8 +1,6 @@
 package com.example.examseatplanner.dto;
 
-import com.example.examseatplanner.model.Room;
-import com.example.examseatplanner.model.Seat;
-import com.example.examseatplanner.model.Student;
+
 
 import java.util.List;
 

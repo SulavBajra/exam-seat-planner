@@ -8,7 +8,6 @@ import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.service.ExamService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +25,6 @@ public class ExamController {
     private final ExamService examService;
     private final ExamRepository examRepository;
 
-    @Autowired
     public ExamController(ExamService examService,
                           ExamRepository examRepository) {
         this.examService = examService;
