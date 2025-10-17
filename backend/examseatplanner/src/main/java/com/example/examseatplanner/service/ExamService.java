@@ -40,14 +40,18 @@ public class ExamService {
         return examRepository.findAll().stream().map(ExamMapper::toDto).toList();
     }
 
-    public List<Integer> getBookedRoomsByDate(LocalDate date) {
-        return examRepository.findAll().stream()
-                .filter(exam -> exam.getDate().equals(date))
-                .flatMap(exam -> exam.getRooms().stream())
-                .map(Room::getRoomNo)
-                .distinct()
-                .collect(Collectors.toList());
-    }
+  public List<Integer> getBookedRoomsByDate(LocalDate startDate, LocalDate endDate) {
+    return examRepository.findBookedRoomNumbersByDateRange(startDate, endDate);
+  }
+
+    // public List<Integer> getBookedRoomsByDate(LocalDate startDate, LocalDate endDate) {
+    //     return examRepository.findAll().stream()
+    //             .filter(exam -> exam.getStartDate().equals(startDate))
+    //             .flatMap(exam -> exam.getRooms().stream())
+    //             .map(Room::getRoomNo)
+    //             .distinct()
+    //             .collect(Collectors.toList());
+    // }
 
     public Optional<Exam> getExamEntityById(Integer examId) {
         return examRepository.findById(examId);
@@ -58,16 +62,13 @@ public class ExamService {
         Optional<Exam> examOpt = getExamEntityById(examId);
         if (examOpt.isPresent()) {
             Exam exam = examOpt.get();
-            // getPrograms() already returns List<Program>
             return exam.getPrograms();
         }
         return new ArrayList<>();
     }
 
-    public boolean isRoomBooked(Integer roomNo) {
-        return examRepository.findAll().stream()
-                .anyMatch(exam -> exam.getRooms().stream()
-                        .anyMatch(room -> room.getRoomNo().equals(roomNo)));
+   public boolean isRoomBooked(Integer roomNo, LocalDate startDate, LocalDate endDate) {
+        return examRepository.isRoomOccupied(roomNo, startDate, endDate);
     }
 
 
@@ -219,12 +220,8 @@ public class ExamService {
         return true;
     }
 
-    public List<Exam> getExamsByDate(LocalDate date) {
-        return examRepository.findByDate(date);
-    }
-
     public List<Exam> getExamsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return examRepository.findByDateBetween(startDate, endDate);
+        return examRepository.findOverlappingExams(startDate, endDate);
     }
 
     public List<Exam> getExamsByProgramCode(Integer programCode) {

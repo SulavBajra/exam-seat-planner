@@ -13,10 +13,10 @@ public class ExamMapper {
 
     public static Exam toEntity(ExamRequestDTO dto, List<Program> programs, List<Room> rooms) {
         Exam exam = new Exam();
-        exam.setDate(LocalDate.parse(dto.date()));
+        exam.setStartDate(LocalDate.parse(dto.startDate()));
+        exam.setEndDate(LocalDate.parse(dto.endDate()));
         exam.setRooms(rooms);
 
-        // ✅ Create ExamProgramSemester entities
         List<ExamProgramSemester> programSemesters = new ArrayList<>();
 
             Map<Integer, Program> programMap = programs.stream()
@@ -55,7 +55,8 @@ public class ExamMapper {
 
         return new ExamResponseDTO(
                 exam.getId(),
-                exam.getDate(),
+                exam.getStartDate(),
+                exam.getEndDate(),
                 programSemesters,
                 exam.getRooms().stream()
                         .map(room -> room.getRoomNo().toString())

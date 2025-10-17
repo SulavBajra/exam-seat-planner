@@ -70,16 +70,28 @@ public class ExamController {
         return ResponseEntity.ok(createdExams);
     }
 
-    @GetMapping("/booked-rooms")
-    public List<Integer> getBookedRoomsByDate(@RequestParam("date") String date) {
-        LocalDate examDate = LocalDate.parse(date);
-        return examService.getBookedRoomsByDate(examDate);
+     @GetMapping("/booked-rooms")
+    public List<Integer> getBookedRoomsByDate(
+            @RequestParam("startDate") String startDate, 
+            @RequestParam("endDate") String endDate) {
+        LocalDate examStartDate = LocalDate.parse(startDate);
+        LocalDate examEndDate = LocalDate.parse(endDate);
+        return examService.getBookedRoomsByDate(examStartDate, examEndDate);
     }
 
+    // @GetMapping("/{roomNo}/is-booked")
+    // public boolean isRoomBooked(@PathVariable Integer roomNo) {
+    //     return examService.isRoomBooked(roomNo);
+    // }
+
     @GetMapping("/{roomNo}/is-booked")
-    public boolean isRoomBooked(@PathVariable Integer roomNo) {
-        return examService.isRoomBooked(roomNo);
-    }
+    public boolean isRoomBooked(@PathVariable Integer roomNo,
+                           @RequestParam("startDate") String startDate,
+                           @RequestParam("endDate") String endDate) {
+    LocalDate examStartDate = LocalDate.parse(startDate);
+    LocalDate examEndDate = LocalDate.parse(endDate);
+    return examService.isRoomBooked(roomNo, examStartDate, examEndDate);
+}
 
     @GetMapping("/students/{examId}")
     public Long getNumberOfStudents(@PathVariable Integer examId) {
@@ -120,11 +132,6 @@ public class ExamController {
     public ResponseEntity<Void> deleteExam(@PathVariable Integer examId) {
         boolean deleted = examService.deleteExam(examId);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
-    }
-
-    @GetMapping("/date/{date}")
-    public List<Exam> getExamsByDate(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return examService.getExamsByDate(date);
     }
 
     @GetMapping("/program/{programCode}")

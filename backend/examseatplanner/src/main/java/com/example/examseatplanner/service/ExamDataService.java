@@ -41,7 +41,8 @@ public class ExamDataService {
 
         return new ExamDataDTO(
                 exam.getId(),
-                exam.getDate().toString(),
+                exam.getStartDate().toString(),
+                exam.getEndDate().toString(),
                 programs,
                 rooms,
                 students

@@ -5,7 +5,8 @@ import java.util.List;
 
 public record ExamResponseDTO(
         Integer id,
-        LocalDate date,
-        List<ProgramSemesterResponseDTO> programSemesters,  // ✅ Changed from programNames
+        LocalDate startDate,
+        LocalDate endDate,
+        List<ProgramSemesterResponseDTO> programSemesters, 
         List<String> roomNames
 ) {}
