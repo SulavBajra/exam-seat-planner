@@ -1,9 +1,7 @@
     package com.example.examseatplanner.model;
 
-    import com.fasterxml.jackson.annotation.JsonManagedReference;
     import jakarta.persistence.*;
 
-    import java.util.ArrayList;
     import java.util.List;
 
     @Entity
@@ -17,10 +15,6 @@
 
         private int seatsPerBench = 2;
 
-        @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-        @JsonManagedReference
-        private List<Seat> seats = new ArrayList<>();
-
         @ManyToMany(mappedBy = "rooms")
         private List<Exam> exams;
 
@@ -33,28 +27,6 @@
             this.numRow = numRow;
             setSeatsPerBench(seatsPerBench);
             setRoomColumn(room_column);
-        }
-
-        public void createRoom() {
-            seats.clear();
-            for (int row = 0; row < numRow; row++) {
-                for (int bench = 0; bench < roomColumn; bench++) {
-                    for (int seatPos = 0; seatPos < seatsPerBench; seatPos++) {
-                        Seat seat = new Seat(row, bench, seatPos, this, null);
-                        // Optionally set seatSide if relevant
-                        seat.setSeatSide(seatPos);
-                        seats.add(seat);
-                    }
-                }
-            }
-        }
-
-        public List<Seat> getSeats() {
-            return seats;
-        }
-
-        public void setSeats(List<Seat> seats) {
-            this.seats = seats;
         }
 
         public int getRoomColumn() {

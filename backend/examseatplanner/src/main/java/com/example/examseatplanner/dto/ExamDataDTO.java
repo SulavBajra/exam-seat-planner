@@ -5,8 +5,8 @@ import java.util.List;
 public record ExamDataDTO(
         Integer examId,
         String examDate,
-        List<ProgramDTO> programs,
-        List<RoomDTO> rooms,
+        List<ProgramResponseDTO> programs,
+        List<RoomResponseDTO> rooms,
         List<StudentDTO> students
 ) {}
 

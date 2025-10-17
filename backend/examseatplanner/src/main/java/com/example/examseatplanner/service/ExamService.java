@@ -91,10 +91,8 @@ public class ExamService {
                 })
                 .sum();
 
-        // Get all rooms and calculate total capacity
         List<Room> rooms = roomRepository.findAllById(request.roomNumbers());
 
-        // Check if all requested rooms exist
         if (rooms.size() != request.roomNumbers().size()) {
             List<Integer> missingRooms = new ArrayList<>(request.roomNumbers());
             rooms.forEach(r -> missingRooms.remove(r.getRoomNo()));
@@ -112,7 +110,6 @@ public class ExamService {
             // Calculate how much additional capacity is needed
             int deficit = totalStudents - totalRoomCapacity;
 
-            // Get student count per program-semester for detailed error message
             Map<String, Integer> studentCounts = request.programSemesters().stream()
                     .collect(Collectors.toMap(
                             ps -> "Program " + ps.programCode() + " Semester " + ps.semester(),
@@ -139,7 +136,6 @@ public class ExamService {
     }
 
     public ExamResponseDTO createExamFromDto(ExamRequestDTO dto) {
-        // Validate and fetch programs
         List<Integer> programCodes = dto.programSemesters().stream()
                 .map(ProgramSemesterDTO::programCode)
                 .distinct()
@@ -151,7 +147,6 @@ public class ExamService {
             throw new IllegalArgumentException("One or more program codes are invalid");
         }
 
-        // Validate and fetch rooms
         List<Room> rooms = roomRepository.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
             throw new IllegalArgumentException("One or more room numbers are invalid");
@@ -194,7 +189,6 @@ public class ExamService {
             throw new NoSuchElementException("Exam not found");
         }
 
-        // Validate and fetch programs
         List<Integer> programCodes = dto.programSemesters().stream()
                 .map(ProgramSemesterDTO::programCode)
                 .distinct()
@@ -205,7 +199,6 @@ public class ExamService {
             throw new IllegalArgumentException("One or more program codes are invalid");
         }
 
-        // Validate and fetch rooms
         List<Room> rooms = roomRepository.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
             throw new IllegalArgumentException("One or more room numbers are invalid");
