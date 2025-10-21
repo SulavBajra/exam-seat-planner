@@ -6,7 +6,6 @@ import com.example.examseatplanner.mapper.ProgramMapper;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ProgramRepository;
 import io.micrometer.common.util.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -19,7 +18,6 @@ public class ProgramService {
 
     private final ProgramRepository programRepository;
 
-    @Autowired
     public ProgramService(ProgramRepository programRepository) {
         this.programRepository = programRepository;
     }

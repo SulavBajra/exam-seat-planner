@@ -11,11 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StudentRepository extends JpaRepository<Student, String> {
-
-    /**
-     * Find students by program
-     */
+public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     @Query("""
         SELECT COUNT(s)
@@ -33,6 +29,8 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     """)
     Long countStudentsForExam(@Param("examId") Integer examId);
 
+    Optional<Student> findByStudentId(Integer studentId);
+
     List<Student> findByProgram(Program program);
 
     @Query("SELECT COUNT(s) FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester")
@@ -46,62 +44,28 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     """)
     List<Student> findByExamId(@Param("examId") Integer examId);
 
-    /**
-     * Find students by multiple programs
-     */
     List<Student> findByProgramIn(List<Program> programs);
 
-    /**
-     * Find students by semester
-     */
     List<Student> findBySemester(Student.Semester semester);
 
-    /**
-     * Find students by program and semester
-     */
     List<Student> findByProgramAndSemester(Program program, Student.Semester semester);
 
-    /**
-     * Find students by program code and semester
-     */
     @Query("SELECT s FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester")
     List<Student> findByProgramCodeAndSemester(@Param("programCode") Integer programCode,
                                                @Param("semester") Student.Semester semester);
 
-    /**
-     * Check if roll number is taken for a program and semester
-     */
     boolean existsByRollAndProgramAndSemester(int roll, Program program, Student.Semester semester);
 
-    /**
-     * Find students by roll number
-     */
     List<Student> findByRoll(int roll);
 
-    /**
-     * Find student by program, semester, and roll
-     */
     Optional<Student> findByProgramAndSemesterAndRoll(Program program, Student.Semester semester, int roll);
 
-    /**
-     * Count students in a program
-     */
     long countByProgram(Program program);
 
-    /**
-     * Count students in a semester
-     */
     long countBySemester(Student.Semester semester);
 
-//    boolean existsByProgramAndSemesterAndRoll(Program program, int semester, int roll);
-    /**
-     * Find students with roll numbers in range
-     */
     List<Student> findByRollBetween(int startRoll, int endRoll);
 
-    /**
-     * Get max roll number for a program and semester
-     */
     @Query("SELECT MAX(s.roll) FROM Student s WHERE s.program = :program AND s.semester = :semester")
     Optional<Integer> findMaxRollByProgramAndSemester(@Param("program") Program program,
                                                       @Param("semester") Student.Semester semester);

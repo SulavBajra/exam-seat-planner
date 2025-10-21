@@ -4,10 +4,8 @@ import Student from "@/components/Student";
 import Program from "@/components/Program";
 import Exam from "@/components/Exam";
 import ExamList from "@/components/ExamList";
-import SeatGrid from "@/components/SeatGrid";
 import Room from "@/components/Room";
 import SeatingArrangement from "@/components/SeatingArrangement";
-import ChooseSeatPlan from "@/components/ChooseSeatPlan";
 import StudentList from "@/components/StudentList";
 import Login from "@/components/Login";
 
@@ -21,8 +19,6 @@ export default function AppRoutes() {
         <Route path="exam" element={<Exam />} />
         <Route path="examList" element={<ExamList />} />
         <Route path="room" element={<Room />} />
-        <Route path="seatGrid/:examId" element={<SeatGrid />} />
-        <Route path="/choose-seat-plan" element={<ChooseSeatPlan />} />
         <Route path="studentList" element={<StudentList />} />
         <Route
           path="seatingArrangement/:examId"

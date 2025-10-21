@@ -12,7 +12,6 @@ import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.RoomRepository;
 import com.example.examseatplanner.repository.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,7 +26,6 @@ public class ExamService {
     private final RoomRepository roomRepository;
     private final StudentRepository studentRepository;
 
-    @Autowired
     public ExamService(ExamRepository examRepository,
                        ProgramRepository programRepository,
                        RoomRepository roomRepository,
@@ -42,14 +40,18 @@ public class ExamService {
         return examRepository.findAll().stream().map(ExamMapper::toDto).toList();
     }
 
-    public List<Integer> getBookedRoomsByDate(LocalDate date) {
-        return examRepository.findAll().stream()
-                .filter(exam -> exam.getDate().equals(date))
-                .flatMap(exam -> exam.getRooms().stream())
-                .map(Room::getRoomNo)
-                .distinct()
-                .collect(Collectors.toList());
-    }
+  public List<Integer> getBookedRoomsByDate(LocalDate startDate, LocalDate endDate) {
+    return examRepository.findBookedRoomNumbersByDateRange(startDate, endDate);
+  }
+
+    // public List<Integer> getBookedRoomsByDate(LocalDate startDate, LocalDate endDate) {
+    //     return examRepository.findAll().stream()
+    //             .filter(exam -> exam.getStartDate().equals(startDate))
+    //             .flatMap(exam -> exam.getRooms().stream())
+    //             .map(Room::getRoomNo)
+    //             .distinct()
+    //             .collect(Collectors.toList());
+    // }
 
     public Optional<Exam> getExamEntityById(Integer examId) {
         return examRepository.findById(examId);
@@ -60,16 +62,13 @@ public class ExamService {
         Optional<Exam> examOpt = getExamEntityById(examId);
         if (examOpt.isPresent()) {
             Exam exam = examOpt.get();
-            // getPrograms() already returns List<Program>
             return exam.getPrograms();
         }
         return new ArrayList<>();
     }
 
-    public boolean isRoomBooked(Integer roomNo) {
-        return examRepository.findAll().stream()
-                .anyMatch(exam -> exam.getRooms().stream()
-                        .anyMatch(room -> room.getRoomNo().equals(roomNo)));
+   public boolean isRoomBooked(Integer roomNo, LocalDate startDate, LocalDate endDate) {
+        return examRepository.isRoomOccupied(roomNo, startDate, endDate);
     }
 
 
@@ -93,10 +92,8 @@ public class ExamService {
                 })
                 .sum();
 
-        // Get all rooms and calculate total capacity
         List<Room> rooms = roomRepository.findAllById(request.roomNumbers());
 
-        // Check if all requested rooms exist
         if (rooms.size() != request.roomNumbers().size()) {
             List<Integer> missingRooms = new ArrayList<>(request.roomNumbers());
             rooms.forEach(r -> missingRooms.remove(r.getRoomNo()));
@@ -114,7 +111,6 @@ public class ExamService {
             // Calculate how much additional capacity is needed
             int deficit = totalStudents - totalRoomCapacity;
 
-            // Get student count per program-semester for detailed error message
             Map<String, Integer> studentCounts = request.programSemesters().stream()
                     .collect(Collectors.toMap(
                             ps -> "Program " + ps.programCode() + " Semester " + ps.semester(),
@@ -141,7 +137,6 @@ public class ExamService {
     }
 
     public ExamResponseDTO createExamFromDto(ExamRequestDTO dto) {
-        // Validate and fetch programs
         List<Integer> programCodes = dto.programSemesters().stream()
                 .map(ProgramSemesterDTO::programCode)
                 .distinct()
@@ -153,7 +148,6 @@ public class ExamService {
             throw new IllegalArgumentException("One or more program codes are invalid");
         }
 
-        // Validate and fetch rooms
         List<Room> rooms = roomRepository.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
             throw new IllegalArgumentException("One or more room numbers are invalid");
@@ -196,7 +190,6 @@ public class ExamService {
             throw new NoSuchElementException("Exam not found");
         }
 
-        // Validate and fetch programs
         List<Integer> programCodes = dto.programSemesters().stream()
                 .map(ProgramSemesterDTO::programCode)
                 .distinct()
@@ -207,7 +200,6 @@ public class ExamService {
             throw new IllegalArgumentException("One or more program codes are invalid");
         }
 
-        // Validate and fetch rooms
         List<Room> rooms = roomRepository.findAllById(dto.roomNumbers());
         if (rooms.size() != dto.roomNumbers().size()) {
             throw new IllegalArgumentException("One or more room numbers are invalid");
@@ -228,12 +220,8 @@ public class ExamService {
         return true;
     }
 
-    public List<Exam> getExamsByDate(LocalDate date) {
-        return examRepository.findByDate(date);
-    }
-
     public List<Exam> getExamsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return examRepository.findByDateBetween(startDate, endDate);
+        return examRepository.findOverlappingExams(startDate, endDate);
     }
 
     public List<Exam> getExamsByProgramCode(Integer programCode) {

@@ -3,7 +3,6 @@ package com.example.examseatplanner.controller;
 import com.example.examseatplanner.dto.RoomRequestDTO;
 import com.example.examseatplanner.dto.RoomResponseDTO;
 import com.example.examseatplanner.service.RoomService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +14,6 @@ public class RoomController {
 
     private final RoomService roomService;
 
-    @Autowired
     public RoomController(RoomService roomService) {
         this.roomService = roomService;
     }

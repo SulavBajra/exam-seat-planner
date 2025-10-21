@@ -71,10 +71,6 @@ export default function ExamList() {
             View and manage all exam seating arrangements
           </p>
         </div>
-        <Button onClick={() => navigate("/choose-seat-plan")} className="gap-2">
-          <PlusCircle className="h-4 w-4" />
-          Create New Plan
-        </Button>
       </div>
 
       {loading ? (
