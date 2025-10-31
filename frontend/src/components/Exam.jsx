@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ScheduleExamForm } from "@/components/ScheduleExamForm";
+import {ScheduleExamForm} from "@/components/ScheduleExamForm";
 import {
   Dialog,
   DialogContent,
@@ -144,6 +144,16 @@ export default function Exam() {
     }
   };
 
+  const formatDateRange = (startDate, endDate) => {
+  try {
+    const start = format(new Date(startDate), "MMM dd, yyyy");
+    const end = format(new Date(endDate), "MMM dd, yyyy");
+    return `${start} - ${end}`;
+  } catch {
+    return `${startDate} - ${endDate}`;
+  }
+};
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -160,8 +170,7 @@ export default function Exam() {
           <PlusCircle className="h-4 w-4" />
           Schedule Exam
         </Button>
-      </div>
-
+      </div>     
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -169,6 +178,9 @@ export default function Exam() {
               <CalendarDays className="h-5 w-5" />
               Schedule New Exam
             </DialogTitle>
+            <DialogDescription>
+              Fill in the details below to create a new exam schedule.
+            </DialogDescription>
           </DialogHeader>
           <ScheduleExamForm
             onSubmit={handleScheduleExam}
@@ -176,7 +188,6 @@ export default function Exam() {
           />
         </DialogContent>
       </Dialog>
-
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertDescription>{error}</AlertDescription>
@@ -223,7 +234,7 @@ export default function Exam() {
                       <CardTitle className="text-lg">Exam Schedule</CardTitle>
                     </div>
                     <CardDescription className="mt-2 font-medium text-foreground">
-                      {formatDate(exam.date)}
+                      {formatDateRange(exam.startDate, exam.endDate)}
                     </CardDescription>
                   </div>
                   <Button
@@ -292,7 +303,6 @@ export default function Exam() {
         </Card>
       )}
 
-      {/* Enhanced Details Dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader className="pb-4">

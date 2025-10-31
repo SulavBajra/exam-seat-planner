@@ -91,8 +91,13 @@ export default function ExamList() {
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
                       <CalendarDays className="h-4 w-4" />
-                      {formatDate(exam.date)}
+                      Start Date: {formatDate(exam.startDate)}
                     </CardDescription>
+                    <CardDescription className="flex items-center gap-2 mt-1">
+                      <CalendarDays className="h-4 w-4" />
+                      End Date: {formatDate(exam.endDate)}
+                    </CardDescription>
+
                   </div>
                   <Badge variant="secondary" className="ml-2">
                     {exam.programSemesters?.length || 0} Semesters

@@ -1,31 +1,48 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, DoorOpen, GraduationCap, Loader2 } from "lucide-react";
+import {
+  CalendarDays,
+  DoorOpen,
+  GraduationCap,
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
+import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export function ScheduleExamForm({ onSubmit, onCancel }) {
+  const [currentStep, setCurrentStep] = useState(1);
   const [rooms, setRooms] = useState([]);
   const [availablePrograms, setAvailablePrograms] = useState([]);
+  const [bookedRooms, setBookedRooms] = useState([]);
   const [isLoading, setIsLoading] = useState({
     rooms: false,
     programs: false,
     submitting: false,
   });
-  const [formData, setFormData] = useState({
-    date: "",
-    programSemesters: [],
-    rooms: [],
-  });
   const [error, setError] = useState({
     rooms: null,
     programs: null,
   });
-  const [bookedRooms, setBookedRooms] = useState([]);
+
+  const [formData, setFormData] = useState({
+    startDate: "",
+    endDate: "",
+    programSemesters: [],
+    rooms: [],
+  });
 
   const semesters = [
     "FIRST",
@@ -38,311 +55,428 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
     "EIGHTH",
   ];
 
+  const steps = [
+    { id: 1, title: "Date Selection", description: "Choose exam date" },
+    {
+      id: 2,
+      title: "Programs & Semesters",
+      description: "Select programs and semesters",
+    },
+    { id: 3, title: "Room Selection", description: "Choose examination rooms" },
+    { id: 4, title: "Review & Submit", description: "Review before submitting" },
+  ];
+
+
   useEffect(() => {
-    fetchRooms();
     fetchPrograms();
-  }, []);
+    fetchRooms();
+  },);
 
   useEffect(() => {
-    if (!formData.date) return;
-
-    async function fetchBookedRooms() {
-      try {
-        const res = await fetch(
-          `http://localhost:8081/api/exams/booked-rooms?date=${formData.date}`
-        );
-        if (!res.ok) throw new Error("Failed to fetch booked rooms");
-        const data = await res.json();
-        setBookedRooms(data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch already booked rooms");
-      }
-    }
-
-    fetchBookedRooms();
-  }, [formData.date]);
-
-  const getTodayDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  fetchBookedRooms(formData.startDate, formData.endDate);
+}, [formData.startDate, formData.endDate]);
 
   async function fetchRooms() {
-    setIsLoading((prev) => ({ ...prev, rooms: true }));
-    setError((prev) => ({ ...prev, rooms: null }));
+    setIsLoading((p) => ({ ...p, rooms: true }));
     try {
-      const response = await fetch("http://localhost:8081/api/rooms");
-      if (!response.ok)
-        throw new Error(`Failed to fetch rooms: ${response.status}`);
-      setRooms(await response.json());
-    } catch (error) {
-      setError((prev) => ({ ...prev, rooms: error.message }));
+      const res = await fetch("http://localhost:8081/api/rooms");
+      if (!res.ok) throw new Error("Failed to fetch rooms");
+      setRooms(await res.json());
+    } catch (err) {
+      setError((p) => ({ ...p, rooms: err.message }));
       toast.error("Failed to load rooms");
     } finally {
-      setIsLoading((prev) => ({ ...prev, rooms: false }));
+      setIsLoading((p) => ({ ...p, rooms: false }));
     }
   }
 
   async function fetchPrograms() {
-    setIsLoading((prev) => ({ ...prev, programs: true }));
-    setError((prev) => ({ ...prev, programs: null }));
+    setIsLoading((p) => ({ ...p, programs: true }));
     try {
-      const response = await fetch("http://localhost:8081/api/programs");
-      if (!response.ok)
-        throw new Error(`Failed to fetch programs: ${response.status}`);
-      setAvailablePrograms(await response.json());
-    } catch (error) {
-      setError((prev) => ({ ...prev, programs: error.message }));
-      toast.error("Failed to load programs");
+      const res = await fetch("http://localhost:8081/api/programs");
+      if (!res.ok) throw new Error("Failed to fetch programs");
+      setAvailablePrograms(await res.json());
+    } catch (err) {
+      setError((p) => ({ ...p, programs: err.message }));
+      toast.error("Failed to load programs ",error);
     } finally {
-      setIsLoading((prev) => ({ ...prev, programs: false }));
+      setIsLoading((p) => ({ ...p, programs: false }));
     }
   }
 
-  const handleDateChange = (e) => {
-    const selectedDate = e.target.value;
-    const today = getTodayDate();
-    if (selectedDate < today) return; // ignore past date
-    setFormData({ ...formData, date: selectedDate });
+  async function fetchBookedRooms(startDate, endDate) {
+    if (!startDate || !endDate) return; 
+
+    try {
+      const res = await fetch(
+        `http://localhost:8081/api/exams/booked-rooms?startDate=${startDate}&endDate=${endDate}`
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch booked rooms");
+
+      const data = await res.json();
+      setBookedRooms(data);
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to load booked rooms: ${error.message}`);
+    }
+  }
+
+  const getTodayDate = () => new Date().toISOString().split("T")[0];
+
+  const nextStep = () => {
+   if (currentStep === 1) {
+    if (!formData.startDate || !formData.endDate) {
+    toast.error("Please select both start and end dates");
+    return;
+    }
+     if (formData.endDate < formData.startDate) {
+    toast.error("End date cannot be before start date");
+    return;
+    }
+  }
+    if (currentStep === 2 && formData.programSemesters.length === 0)
+      return toast.error("Please select at least one program and semester");
+    if (currentStep === 3 && formData.rooms.length === 0)
+      return toast.error("Please select at least one room");
+
+    setCurrentStep((s) => Math.min(s + 1, steps.length));
   };
+
+  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading((prev) => ({ ...prev, submitting: true }));
-
-    const today = getTodayDate();
-    if (formData.date < today) {
-      toast.error("Please select a future date");
-      setIsLoading((prev) => ({ ...prev, submitting: false }));
-      return;
-    }
-
-    if (formData.programSemesters.length === 0) {
-      toast.error("Please select at least one program and semester");
-      setIsLoading((prev) => ({ ...prev, submitting: false }));
-      return;
-    }
-
-    if (formData.rooms.length === 0) {
-      toast.error("Please select at least one room");
-      setIsLoading((prev) => ({ ...prev, submitting: false }));
-      return;
-    }
+    setIsLoading((p) => ({ ...p, submitting: true }));
 
     const payload = {
-      date: formData.date,
-      programSemesters: formData.programSemesters.map(
-        ({ programCode, semester }) => ({
-          programCode,
-          semester: semesters.indexOf(semester) + 1,
-        })
-      ),
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      programSemesters: formData.programSemesters.map(({ programCode, semester }) => ({
+        programCode,
+        semester: semesters.indexOf(semester) + 1,
+      })),
       roomNumbers: formData.rooms.map((r) => r.roomNo),
     };
+
+    if (!formData.startDate || !formData.endDate) {
+      toast.error("Please select both start and end dates");
+      setIsLoading((prev) => ({ ...prev, submitting: false }));
+      return;
+    }
+
+    if (formData.endDate < formData.startDate) {
+      toast.error("End date cannot be before start date");
+      setIsLoading((prev) => ({ ...prev, submitting: false }));
+      return;
+    }
+
 
     try {
       await onSubmit(payload);
     } finally {
-      setIsLoading((prev) => ({ ...prev, submitting: false }));
+      setIsLoading((p) => ({ ...p, submitting: false }));
     }
   };
 
-  const selectedProgramsCount = new Set(
-    formData.programSemesters.map((ps) => ps.programCode)
-  ).size;
-  const selectedRoomsCount = formData.rooms.length;
 
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 h-full">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        {/* Date Picker */}
-        <div className="space-y-2">
-          <Label htmlFor="date" className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
-            Exam Date
-          </Label>
-          <Input
-            type="date"
-            id="date"
-            name="date"
-            value={formData.date}
-            onChange={handleDateChange}
-            required
-            min={getTodayDate()}
-          />
-          <p className="text-sm text-muted-foreground">
-            Please select a future date
-          </p>
+  const StepIndicator = () => (
+    <div className="flex justify-center items-center gap-3 mb-8">
+      {steps.map((step, i) => (
+        <div key={step.id} className="flex items-center">
+          <div
+            className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium border transition-colors ${
+              currentStep >= step.id
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {step.id}
+          </div>
+          {i < steps.length - 1 && (
+            <div
+              className={`w-10 h-0.5 ${
+                currentStep > step.id ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          )}
         </div>
+      ))}
+    </div>
+  );
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4" />
-              Programs
+
+  const renderStep = () => {
+    switch (currentStep) {
+    case 1:
+  return (
+    <Card className="shadow-md border-gray-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <CalendarDays className="h-5 w-5 text-primary" />
+          Select Exam Dates
+        </CardTitle>
+        <CardDescription>
+          Choose the start and end dates for the examination period
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Start Date */}
+          <div className="flex flex-col">
+            <Label htmlFor="startDate" className="font-medium text-sm">
+              Start Date
             </Label>
-            {selectedProgramsCount > 0 && (
-              <Badge variant="secondary">
-                {selectedProgramsCount} selected
-              </Badge>
-            )}
+            <Input
+              type="date"
+              id="startDate"
+              name="startDate"
+              value={formData.startDate}
+              onChange={(e) =>
+                setFormData({ ...formData, startDate: e.target.value })
+              }
+              required
+              min={getTodayDate()}
+              className="mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            />
           </div>
 
-          {isLoading.programs ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading programs...
-            </div>
-          ) : error.programs ? (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-600 text-sm">
-              {error.programs}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchPrograms}
-                className="mt-2 h-8"
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <ScrollArea className="h-[200px] rounded-md border">
-              <div className="p-3 space-y-4">
-                {availablePrograms.map((program) => (
-                  <div key={program.programCode} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">{program.programName}</h4>
-                      <Badge variant="outline">{program.programCode}</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {semesters.map((sem) => (
+          {/* End Date */}
+          <div className="flex flex-col">
+            <Label htmlFor="endDate" className="font-medium text-sm">
+              End Date
+            </Label>
+            <Input
+              type="date"
+              id="endDate"
+              name="endDate"
+              value={formData.endDate}
+              onChange={(e) =>
+                setFormData({ ...formData, endDate: e.target.value })
+              }
+              required
+              min={formData.startDate || getTodayDate()}
+              className="mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          The end date must be the same or after the start date.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+      case 2:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <GraduationCap className="h-5 w-5" /> Select Programs & Semesters
+              </CardTitle>
+              <CardDescription>
+                Choose which programs and semesters will take the exam
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading.programs ? (
+                <div className="flex justify-center items-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading...
+                </div>
+              ) : (
+                <ScrollArea className="h-[400px] rounded-md border">
+                  <div className="p-4 space-y-6">
+                    {availablePrograms.map((program) => (
+                      <div key={program.programCode} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{program.programName}</span>
+                          <Badge variant="outline">{program.programCode}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {semesters.map((sem) => (
+                            <Label
+                              key={sem}
+                              className="flex items-center gap-2 text-sm border rounded-md p-2 hover:bg-accent/40"
+                            >
+                              <Checkbox
+                                checked={formData.programSemesters.some(
+                                  (ps) =>
+                                    ps.programCode === program.programCode &&
+                                    ps.semester === sem
+                                )}
+                                onCheckedChange={(checked) => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    programSemesters: checked
+                                      ? [
+                                          ...prev.programSemesters,
+                                          {
+                                            programCode: program.programCode,
+                                            semester: sem,
+                                          },
+                                        ]
+                                      : prev.programSemesters.filter(
+                                          (ps) =>
+                                            !(
+                                              ps.programCode ===
+                                                program.programCode &&
+                                              ps.semester === sem
+                                            )
+                                        ),
+                                  }));
+                                }}
+                              />
+                              {sem}
+                            </Label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 3:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <DoorOpen className="h-5 w-5" /> Select Examination Rooms
+              </CardTitle>
+              <CardDescription>
+                Choose available rooms for the examination
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading.rooms ? (
+                <div className="flex justify-center items-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading...
+                </div>
+              ) : (
+                <ScrollArea className="h-[400px] rounded-md border">
+                  <div className="p-4 space-y-3">
+                    {rooms.map((room) => {
+                      const isBooked = bookedRooms.includes(room.roomNo);
+                      return (
                         <Label
-                          key={sem}
-                          className="flex items-center gap-2 font-normal"
+                          key={room.roomNo}
+                          className={`flex justify-between items-center gap-3 p-3 border rounded-lg hover:bg-accent/40 ${
+                            isBooked ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
                         >
                           <Checkbox
-                            checked={formData.programSemesters.some(
-                              (ps) =>
-                                ps.programCode === program.programCode &&
-                                ps.semester === sem
+                            checked={formData.rooms.some(
+                              (r) => r.roomNo === room.roomNo
                             )}
-                            onCheckedChange={(checked) => {
+                            disabled={isBooked}
+                            onCheckedChange={(checked) =>
                               setFormData((prev) => ({
                                 ...prev,
-                                programSemesters: checked
-                                  ? [
-                                      ...prev.programSemesters,
-                                      {
-                                        programCode: program.programCode,
-                                        semester: sem,
-                                      },
-                                    ]
-                                  : prev.programSemesters.filter(
-                                      (ps) =>
-                                        !(
-                                          ps.programCode ===
-                                            program.programCode &&
-                                          ps.semester === sem
-                                        )
+                                rooms: checked
+                                  ? [...prev.rooms, room]
+                                  : prev.rooms.filter(
+                                      (r) => r.roomNo !== room.roomNo
                                     ),
-                              }));
-                            }}
+                              }))
+                            }
                           />
-                          {sem}
+                          <div className="flex justify-between w-full">
+                            <span className="font-medium">
+                              Room {room.roomNo}
+                            </span>
+                            <Badge variant="outline">
+                              {room.seatingCapacity} seats
+                            </Badge>
+                          </div>
                         </Label>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                ))}
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 4:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">
+                Review & Confirm
+              </CardTitle>
+              <CardDescription>
+                Please review all selections before submitting
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-muted rounded-md">
+                <span className="font-medium">Exam Duration:</span>
+                <Badge variant="secondary">
+                  {formData.startDate} → {formData.endDate}
+                </Badge>
               </div>
-            </ScrollArea>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2">
-              <DoorOpen className="h-4 w-4" />
-              Rooms
-            </Label>
-            {selectedRoomsCount > 0 && (
-              <Badge variant="secondary">{selectedRoomsCount} selected</Badge>
-            )}
-          </div>
-
-          {isLoading.rooms ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading rooms...
-            </div>
-          ) : error.rooms ? (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-red-600 text-sm">
-              {error.rooms}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchRooms}
-                className="mt-2 h-8"
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <ScrollArea className="h-[180px] rounded-md border">
-              <div className="p-3 space-y-2">
-                {rooms.map((room) => {
-                  const isBooked = bookedRooms.includes(room.roomNo); // check if room is already booked
-
-                  return (
-                    <Label
-                      key={room.roomNo}
-                      className={`flex items-center gap-3 p-2 hover:bg-accent rounded ${
-                        isBooked ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+              <div>
+                <h4 className="font-medium mb-2">Programs & Semesters</h4>
+                <div className="space-y-1 text-sm">
+                  {formData.programSemesters.map((p, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between border rounded-md p-2"
                     >
-                      <Checkbox
-                        checked={formData.rooms.some(
-                          (r) => r.roomNo === room.roomNo
-                        )}
-                        disabled={isBooked} // disable checkbox if booked
-                        onCheckedChange={(checked) => {
-                          if (isBooked) return;
-                          setFormData((prev) => ({
-                            ...prev,
-                            rooms: checked
-                              ? [...prev.rooms, room]
-                              : prev.rooms.filter(
-                                  (r) => r.roomNo !== room.roomNo
-                                ),
-                          }));
-                        }}
-                      />
-                      <div className="flex-1 flex justify-between items-center">
-                        <span
-                          title={isBooked ? "This room is already booked" : ""}
-                        >
-                          Room {room.roomNo}
-                        </span>
-                        <Badge variant="outline">
-                          {room.seatingCapacity} seats
-                        </Badge>
-                      </div>
-                    </Label>
-                  );
-                })}
+                      <span>{p.programCode}</span>
+                      <Badge variant="outline">{p.semester}</Badge>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </ScrollArea>
-          )}
-        </div>
-      </div>
 
-      <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t">
-        <div className="flex justify-end gap-2">
+              <div>
+                <h4 className="font-medium mb-2">Selected Rooms</h4>
+                <div className="space-y-1 text-sm">
+                  {formData.rooms.map((room, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between border rounded-md p-2"
+                    >
+                      <span>Room {room.roomNo}</span>
+                      <Badge variant="outline">
+                        {room.seatingCapacity} seats
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <StepIndicator />
+      <div className="flex-1 overflow-y-auto">{renderStep()}</div>
+
+      <div className="flex justify-between border-t pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={currentStep === 1 || isLoading.submitting}
+          onClick={prevStep}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        </Button>
+
+        <div className="flex gap-2">
           <Button
             type="button"
             variant="outline"
@@ -351,16 +485,21 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading.submitting}>
-            {isLoading.submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Scheduling...
-              </>
-            ) : (
-              "Schedule Exam"
-            )}
-          </Button>
+          {currentStep < steps.length ? (
+            <Button type="button" onClick={nextStep}>
+              Next <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button type="submit" disabled={isLoading.submitting}>
+              {isLoading.submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Scheduling...
+                </>
+              ) : (
+                "Confirm & Schedule"
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </form>
