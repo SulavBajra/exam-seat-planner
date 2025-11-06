@@ -37,7 +37,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
               (parseInt(numColumns) * parseInt(seatsPerBench))
           )
         : Math.ceil(parseInt(seatingCapacity) / (3 * 2)),
-      roomColumn: isAdvanced ? parseInt(numColumns) : 3, // match backend field
+      roomColumn: isAdvanced ? parseInt(numColumns) : 3,
       seatsPerBench: isAdvanced ? parseInt(seatsPerBench) : 2,
     };
 

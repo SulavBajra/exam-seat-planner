@@ -70,7 +70,7 @@ export function ScheduleExamForm({ onSubmit, onCancel }) {
   useEffect(() => {
     fetchPrograms();
     fetchRooms();
-  },);
+  },[]);
 
   useEffect(() => {
   fetchBookedRooms(formData.startDate, formData.endDate);
