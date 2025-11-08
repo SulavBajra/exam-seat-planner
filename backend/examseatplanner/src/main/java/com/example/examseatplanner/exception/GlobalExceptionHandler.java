@@ -8,9 +8,14 @@ import org.springframework.web.context.request.WebRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    public static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, WebRequest request) {
@@ -31,4 +36,15 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(StudentAlreadyExistException.class)
+    public ResponseEntity<Map<String, String>> handleStudentAlreadyExistException(
+        StudentAlreadyExistException ex){
+             logger.warn("Student already exists {}",ex.getMessage());
+             Map<String,String> errors = new HashMap<>();
+             errors.put("message","Student already exists");
+             return ResponseEntity.badRequest().body(errors);
+        }
+    
+
 }

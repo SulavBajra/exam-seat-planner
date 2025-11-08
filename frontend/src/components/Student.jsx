@@ -21,7 +21,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Download, Upload, Check, X, FileText, Users } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -171,24 +170,48 @@ export default function Student() {
         roll: Number(student.Roll),
       }));
 
+      // --- Send data to backend ---
       const response = await fetch("http://localhost:8081/api/students/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(uploadData),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `Server error: ${response.status}`
-        );
+        throw new Error(result.message || `Server error: ${response.status}`);
       }
 
+      setValidationResults((prev) =>
+        prev.map((item) => {
+          const match = result.details?.find(
+            (r) =>
+              r.programCode === item.programCode &&
+              r.semester === Number(item.Semester) &&
+              r.roll === Number(item.Roll)
+          );
+          return match
+            ? {
+                ...item,
+                backendStatus: match.status,
+                backendMessage: match.message,
+              }
+            : item;
+        })
+      );
+
+      const successCount = result.summary?.success || 0;
+      const errorCount = result.summary?.error || 0;
+
       setMessage({
-        text: `Successfully uploaded ${uploadData.length} students!`,
+        text: `${successCount} students added, ${errorCount} failed.`,
         type: "success",
       });
-      toast.success(`Uploaded ${uploadData.length} students successfully`);
+
+      toast.success(
+        `${successCount} students added, ${errorCount} failed to upload`
+      );
     } catch (error) {
       console.error("Upload error:", error);
       setMessage({
@@ -319,6 +342,7 @@ export default function Student() {
                       <X className="h-3 w-3" /> {invalidCount} Invalid
                     </Badge>
                   )}
+                  {validationResults.some((r) => r.backendStatus)}
                 </div>
               </div>
             </CardHeader>
@@ -332,7 +356,7 @@ export default function Student() {
                       <TableHead>Semester</TableHead>
                       <TableHead>Roll</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Errors</TableHead>
+                      <TableHead>Error</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -367,8 +391,25 @@ export default function Student() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-red-600">
+                        {/* <TableCell className="text-red-600">
                           {result.errors?.join(", ")}
+                        </TableCell> */}
+                        <TableCell>
+                          {result.backendStatus ? (
+                            result.backendStatus === "success" ? (
+                              <Badge variant="success" className="gap-1">
+                                <Check className="h-3 w-3" />{" "}
+                                {result.backendMessage}
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="gap-1">
+                                <X className="h-3 w-3" />{" "}
+                                {result.backendMessage}
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge variant="outline">Pending</Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

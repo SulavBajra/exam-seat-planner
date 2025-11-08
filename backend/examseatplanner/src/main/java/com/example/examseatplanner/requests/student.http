@@ -1,0 +1,20 @@
+POST http://localhost:8081/api/students/bulk
+Content-Type: application/json
+
+[
+    {
+        "programCode" : 1001,
+        "semester" : 1,
+        "roll": 1
+    },
+    {
+        "programCode" : 1001,
+        "semester" : 1,
+        "roll": 2
+    },
+    {
+        "programCode" : 1001,
+        "semester" : 1,
+        "roll": 3
+    }
+]

@@ -22,6 +22,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
   const [seatsPerBench, setSeatsPerBench] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const numRows = seatingCapacity / (numColumns * seatsPerBench);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,6 +174,22 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
                     placeholder="e.g., 2"
                     required={isAdvanced}
                     className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="rows"
+                    className="text-sm font-medium"
+                  >
+                    Seats per Bench
+                  </Label>
+                  <Input
+                    id="rows"
+                    type="number"
+                    min="1"
+                    value={numRows}
+                    className="h-11"
+                    readonly
                   />
                 </div>
               </CardContent>

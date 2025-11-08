@@ -2,6 +2,7 @@ package com.example.examseatplanner.service;
 
 import com.example.examseatplanner.dto.StudentRequestDTO;
 import com.example.examseatplanner.dto.StudentResponseDTO;
+import com.example.examseatplanner.exception.StudentAlreadyExistException;
 import com.example.examseatplanner.mapper.StudentMapper;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.ExamProgramSemester;
@@ -40,6 +41,11 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Program not found"));
 
         Student student = studentMapper.toEntity(dto, program);
+        Student.Semester semesterEnum = toSemesterEnum(dto.semester().intValue());
+        if(studentRepository.existsByRollAndProgramAndSemester(dto.roll(),program, semesterEnum)){
+            //in future add name to Student and use getStudentName and put the code and roll and semester as parameter
+            throw new StudentAlreadyExistException("Students already exists ");
+        }
         Student savedStudent = studentRepository.save(student);
         return studentMapper.toDTO(savedStudent);
     }

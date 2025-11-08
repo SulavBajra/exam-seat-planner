@@ -2,6 +2,7 @@ package com.example.examseatplanner.controller;
 
 import com.example.examseatplanner.dto.StudentRequestDTO;
 import com.example.examseatplanner.dto.StudentResponseDTO;
+import com.example.examseatplanner.exception.StudentAlreadyExistException;
 import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.service.StudentService;
 import jakarta.validation.Valid;
@@ -10,7 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -42,17 +46,55 @@ public class StudentController {
         return studentService.createStudent(request);
     }
 
+    // @PostMapping("/bulk")
+    // public ResponseEntity<?> createStudentsBulk(@RequestBody List<StudentRequestDTO> students) {
+    //     try {
+    //         for (StudentRequestDTO dto : students) {
+    //             studentService.createStudent(dto);
+    //         }
+    //         return ResponseEntity.ok().body("Successfully uploaded " + students.size() + " students.");
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body("Failed to upload students: " + e.getMessage());
+    //     }
+    // }
+
+
     @PostMapping("/bulk")
     public ResponseEntity<?> createStudentsBulk(@RequestBody List<StudentRequestDTO> students) {
-        try {
-            for (StudentRequestDTO dto : students) {
-                studentService.createStudent(dto);
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        for (StudentRequestDTO dto : students) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("programCode", dto.programCode());
+            result.put("semester", dto.semester());
+            result.put("roll", dto.roll());
+
+            try {
+                StudentResponseDTO saved = studentService.createStudent(dto);
+                result.put("status", "success");
+                result.put("message", "Student created successfully");
+                result.put("studentId", saved.studentId());
+            } catch (StudentAlreadyExistException e) {
+                result.put("status", "error");
+                result.put("message", "Student already exists");
+            } catch (Exception e) {
+                result.put("status", "error");
+                result.put("message", e.getMessage());
             }
-            return ResponseEntity.ok().body("Successfully uploaded " + students.size() + " students.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to upload students: " + e.getMessage());
+
+            results.add(result);
         }
+
+        // You can also summarize overall outcome:
+        long successCount = results.stream().filter(r -> "success".equals(r.get("status"))).count();
+        long errorCount = results.size() - successCount;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("summary", Map.of("success", successCount, "error", errorCount));
+        response.put("details", results);
+
+        return ResponseEntity.ok(response);
     }
 
 

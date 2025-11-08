@@ -79,11 +79,6 @@ public class ExamController {
         return examService.getBookedRoomsByDate(examStartDate, examEndDate);
     }
 
-    // @GetMapping("/{roomNo}/is-booked")
-    // public boolean isRoomBooked(@PathVariable Integer roomNo) {
-    //     return examService.isRoomBooked(roomNo);
-    // }
-
     @GetMapping("/{roomNo}/is-booked")
     public boolean isRoomBooked(@PathVariable Integer roomNo,
                            @RequestParam("startDate") String startDate,
