@@ -35,7 +35,7 @@ public class ExamDataService {
         List<StudentDTO> students = studentRepository.findByExamId(examId).stream()
                 .map(s -> new StudentDTO(
                         s.getProgram().getProgramCode(),
-                        s.getSemester().ordinal() + 1, // Convert enum to 1-based integer
+                        s.getSemester().ordinal() + 1, 
                         s.getRoll()))
                 .toList();
 

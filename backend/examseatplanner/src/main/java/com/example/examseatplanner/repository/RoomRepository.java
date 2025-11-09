@@ -7,9 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
+
+    Optional<Room> findByRoomNo(Integer roomNo);
 
     @Query("SELECT r FROM Room r WHERE (r.numRow * 3* 2) >= :minCapacity")
     List<Room> findAvailableRoomsWithMinCapacity(@Param("minCapacity") int minCapacity);

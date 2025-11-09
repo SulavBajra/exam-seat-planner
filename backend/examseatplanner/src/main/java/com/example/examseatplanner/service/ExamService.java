@@ -175,6 +175,7 @@ public class ExamService {
         Exam savedExam = examRepository.save(exam);
         return ExamMapper.toDto(savedExam);
     }
+    
 
     public Student.Semester intToSemester(int sem) {
         Student.Semester[] semesters = Student.Semester.values();

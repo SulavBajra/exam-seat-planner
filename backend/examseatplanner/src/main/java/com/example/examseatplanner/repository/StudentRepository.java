@@ -60,6 +60,10 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     Optional<Student> findByProgramAndSemesterAndRoll(Program program, Student.Semester semester, int roll);
 
+     @Query("SELECT s FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester AND s.roll = :roll")
+    Optional<Student> findByProgramCodeAndSemesterAndRoll(Integer programCode, Student.Semester semester, int roll);
+
+
     long countByProgram(Program program);
 
     long countBySemester(Student.Semester semester);

@@ -43,4 +43,6 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
 
     @Query("SELECT r.roomNo FROM Exam e JOIN e.rooms r WHERE e.id = :examId")
     List<Integer> findRoomNumbersByExamId(@Param("examId") Integer examId);
+
+    
 }
