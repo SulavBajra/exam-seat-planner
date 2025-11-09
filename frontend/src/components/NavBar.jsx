@@ -7,6 +7,7 @@ import {
   Users,
   DoorOpen,
   LayoutGrid,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,11 @@ export default function NavBar() {
       path: "/student",
       label: "Students",
       icon: <Users className="h-4 w-4" />,
+    },
+    {
+      path: "/searchSeat",
+      label: "Search Seat",
+      icon: <Search className="h-4 w-4" />,
     },
     {
       path: "/room",

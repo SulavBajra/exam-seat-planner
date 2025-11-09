@@ -166,6 +166,7 @@ export default function SeatingArrangement() {
         className="border p-4 mb-4 rounded-lg shadow-sm break-inside-avoid"
       >
         <h2 className="font-bold mb-2 text-lg">Room {room.roomNo}</h2>
+        <p className="font-bold p-1">Door &#8594;</p>
         {roomRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-2 mb-1">
             {row.reduce((acc, student, idx) => {

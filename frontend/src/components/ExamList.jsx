@@ -116,7 +116,7 @@ export default function ExamList() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/choose-seat-plan")}>
+            <Button onClick={() => navigate("/exam")}>
               Create New Exam Plan
             </Button>
           </CardContent>

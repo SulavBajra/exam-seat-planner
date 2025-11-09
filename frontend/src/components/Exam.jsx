@@ -49,6 +49,7 @@ export default function Exam() {
     fetchExams();
   }, []);
 
+
   async function fetchExams() {
     setLoading(true);
     setError(null);
@@ -59,13 +60,13 @@ export default function Exam() {
       }
       const data = await response.json();
       setExams(data);
-
       const studentCounts = {};
       for (const exam of data) {
         try {
           const examResponse = await fetch(
             `http://localhost:8081/api/exams/students/${exam.id}`
           );
+          
           if (examResponse.ok) {
             const students = await examResponse.json();
             studentCounts[exam.id] = students;
@@ -103,6 +104,24 @@ export default function Exam() {
         throw new Error(`Failed to schedule exam: ${response.status}`);
       }
 
+      const createdExam = await response.json();
+
+      try {
+        const seatResponse = await fetch(
+          `http://localhost:8081/api/seating/generate/${createdExam.id}`,
+          { method: "POST" }
+        );
+        if (!seatResponse.ok) {
+          console.error(
+            `Seat plan generation failed for exam ${createdExam.id}`
+          );
+        } else {
+          console.log(`Seat plan generated for exam ${createdExam.id}`);
+        }
+      } catch (seatError) {
+        console.error("Error generating seat plan:", seatError);
+      }
+
       await fetchExams();
       setIsDialogOpen(false);
     } catch (error) {
@@ -110,6 +129,7 @@ export default function Exam() {
       setError(error.message);
     }
   };
+
 
   const handleDeleteExam = async (examId) => {
     try {
