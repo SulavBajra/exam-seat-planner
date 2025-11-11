@@ -45,6 +45,33 @@ public class GlobalExceptionHandler {
              errors.put("message","Student already exists");
              return ResponseEntity.badRequest().body(errors);
         }
+
+    @ExceptionHandler(ProgramHasExamException.class)
+    public ResponseEntity<Map<String,String>> handleProgramHasExamException(
+        ProgramHasExamException ex){
+            logger.warn("Program has exam {}",ex.getMessage());
+            Map<String,String> errors = new HashMap<>();
+            errors.put("message", "This program is scheduled for exam");
+            return ResponseEntity.badRequest().body(errors);
+        }
+
+    @ExceptionHandler(ProgramHasStudentsException.class)
+    public ResponseEntity<Map<String,String>> handleProgramHasStudentsException(
+        ProgramHasStudentsException ex){
+            logger.warn("Program has student {}",ex.getMessage());
+            Map<String,String> errors = new HashMap<>();
+            errors.put("message", "This program has students for exam");
+            return ResponseEntity.badRequest().body(errors);
+        }
+
+    @ExceptionHandler(NoStudentException.class)
+    public ResponseEntity<Map<String,String>> handleNoStudentException(
+        NoStudentException ex){
+            logger.warn("There are no students {}",ex.getMessage());
+            Map<String,String> errors = new HashMap<>();
+            errors.put("message", "There are no students for exam");
+            return ResponseEntity.badRequest().body(errors);
+        }
     
 
 }

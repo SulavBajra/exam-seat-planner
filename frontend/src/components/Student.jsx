@@ -170,7 +170,6 @@ export default function Student() {
         roll: Number(student.Roll),
       }));
 
-      // --- Send data to backend ---
       const response = await fetch("http://localhost:8081/api/students/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -243,7 +242,7 @@ export default function Student() {
         </div>
         <Button
           variant="outline"
-          className="gap-2"
+          className="gap-2 bg-black text-white"
           onClick={() => navigate("/studentList")}
         >
           View Student List

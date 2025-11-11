@@ -11,11 +11,15 @@ import com.example.examseatplanner.model.SeatingPlan;
 @Repository
 public interface SeatingPlanRepository extends JpaRepository<SeatingPlan,Integer>{
     List<SeatingPlan> findByExamId(Integer examId);
+
     void deleteByExamId(Integer examId);
+
     Optional<SeatingPlan> findByExamIdAndProgramCodeAndSemesterAndRoll(
         Integer examId,
         String programCode,
         Integer semester,
         Integer roll
     );
+
+    void deleteByExam_Id(Integer examId);
 } 

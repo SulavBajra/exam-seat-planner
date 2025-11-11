@@ -2,9 +2,13 @@ package com.example.examseatplanner.service;
 
 import com.example.examseatplanner.dto.ProgramRequestDTO;
 import com.example.examseatplanner.dto.ProgramResponseDTO;
+import com.example.examseatplanner.exception.ProgramHasExamException;
+import com.example.examseatplanner.exception.ProgramHasStudentsException;
 import com.example.examseatplanner.mapper.ProgramMapper;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ProgramRepository;
+import com.example.examseatplanner.repository.StudentRepository;
+
 import io.micrometer.common.util.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +21,13 @@ import java.util.Optional;
 public class ProgramService {
 
     private final ProgramRepository programRepository;
+    private final StudentRepository studentRepository;
 
-    public ProgramService(ProgramRepository programRepository) {
+
+    public ProgramService(ProgramRepository programRepository,
+    StudentRepository studentRepository) {
         this.programRepository = programRepository;
+        this.studentRepository = studentRepository;
     }
 
     public List<ProgramResponseDTO> getAllPrograms() {
@@ -43,8 +51,17 @@ public class ProgramService {
     }
 
     public void deleteProgram(Integer programCode) {
+        if (programRepository.hasUpcomingExams(programCode)) {
+            throw new ProgramHasExamException("This program is scheduled for an exam.");
+        }
+
+        if (studentRepository.existsByProgram_ProgramCode(programCode)) {
+            throw new ProgramHasStudentsException("This program has students");
+        }
+
         programRepository.deleteById(programCode);
     }
+
 
     public List<ProgramResponseDTO> searchProgramsByName(String name) {
         List<Program> programs = programRepository.findByProgramNameContainingIgnoreCase(name);

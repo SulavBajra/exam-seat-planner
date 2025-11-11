@@ -19,6 +19,8 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
     List<Integer> findBookedRoomNumbersByDateRange(@Param("startDate") LocalDate startDate, 
                                                 @Param("endDate") LocalDate endDate);
 
+
+
     @Query("SELECT DISTINCT e FROM Exam e JOIN e.programSemesters eps WHERE eps.program = :program")
     List<Exam> findByProgram(@Param("program") Program program);
 
@@ -43,6 +45,13 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
 
     @Query("SELECT r.roomNo FROM Exam e JOIN e.rooms r WHERE e.id = :examId")
     List<Integer> findRoomNumbersByExamId(@Param("examId") Integer examId);
+    
+    @Query("""
+        SELECT CASE WHEN COUNT(s) > 0 THEN TRUE ELSE FALSE END
+        FROM Student s
+        WHERE s.program.programCode = :programCode
+    """)
+    boolean existsByProgramCodeCustom(@Param("programCode") Integer programCode);
 
     
 }

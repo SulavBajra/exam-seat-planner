@@ -3,6 +3,7 @@ package com.example.examseatplanner.controller;
 import com.example.examseatplanner.dto.BulkExamRequestDTO;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
+import com.example.examseatplanner.exception.NoStudentException;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
 import com.example.examseatplanner.repository.ExamRepository;
@@ -63,8 +64,10 @@ public class ExamController {
             try {
                 ExamResponseDTO responseDTO = examService.createExamFromDto(exam);
                 createdExams.add(responseDTO);
-            } catch (IllegalArgumentException e) {
-               e.printStackTrace();
+            } catch (NoStudentException e) {
+               throw new NoStudentException(e.getMessage());
+            }catch (RuntimeException e){
+                throw new RuntimeException(e.getMessage());
             }
         }
 

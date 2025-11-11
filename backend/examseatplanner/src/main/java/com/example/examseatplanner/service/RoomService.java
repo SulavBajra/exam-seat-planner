@@ -44,7 +44,14 @@ public class RoomService {
         return RoomMapper.toDTO(saved);
     }
 
+    public boolean hasUpcomingExams(Integer roomNo) {
+        return roomRepository.hasUpcomingExams(roomNo);
+    }
+
     public void deleteRoom(Integer roomNo) {
+        if(hasUpcomingExams(roomNo)){
+            throw new RuntimeException("Room is already booked");
+        }
         roomRepository.deleteById(roomNo);
     }
 

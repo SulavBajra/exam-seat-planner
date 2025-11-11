@@ -27,4 +27,10 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
     @Query("SELECT SUM(r.numRow * 3 * 2) FROM Room r")
     Long getTotalCapacityAllRooms();
+    
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END " +
+        "FROM Exam e JOIN e.rooms r " +
+        "WHERE r.roomNo = :roomNo AND e.startDate >= CURRENT_DATE")
+    boolean hasUpcomingExams(@Param("roomNo") Integer roomNo);
+
 }

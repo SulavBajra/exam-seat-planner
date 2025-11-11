@@ -3,10 +3,14 @@ package com.example.examseatplanner.controller;
 import com.example.examseatplanner.dto.RoomRequestDTO;
 import com.example.examseatplanner.dto.RoomResponseDTO;
 import com.example.examseatplanner.service.RoomService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -37,16 +41,17 @@ public class RoomController {
     }
 
     @PutMapping("/{roomNo}")
-    public ResponseEntity<RoomResponseDTO> updateRoom(@PathVariable Integer roomNo,
-                                                      @RequestBody RoomRequestDTO dto) {
+    public ResponseEntity<RoomResponseDTO> updateRoom(
+            @PathVariable Integer roomNo,
+            @Valid @RequestBody RoomRequestDTO dto) { 
         if (roomService.getRoomById(roomNo).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        // Set correct ID before updating
-        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow(), dto.seatsPerBench(),dto.roomColumn());
+        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow(), dto.seatsPerBench(), dto.roomColumn());
         RoomResponseDTO updatedRoom = roomService.saveRoom(dto);
         return ResponseEntity.ok(updatedRoom);
     }
+
 
     @DeleteMapping("/{roomNo}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Integer roomNo) {
@@ -56,6 +61,15 @@ public class RoomController {
         roomService.deleteRoom(roomNo);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/booked/{roomNo}")
+    public boolean isRoomBooked(@PathVariable Integer roomNo) {
+        if (roomService.getRoomById(roomNo).isEmpty()) {
+            return false;
+        }
+        return roomService.hasUpcomingExams(roomNo);    
+    }
+    
 
     @GetMapping("/search")
     public List<RoomResponseDTO> getRoomsWithMinCapacity(@RequestParam int minCapacity) {

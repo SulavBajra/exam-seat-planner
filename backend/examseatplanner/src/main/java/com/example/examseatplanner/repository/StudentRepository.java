@@ -58,6 +58,8 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     List<Student> findByRoll(int roll);
 
+    boolean existsByProgram_ProgramCode(Integer programCode);
+
     Optional<Student> findByProgramAndSemesterAndRoll(Program program, Student.Semester semester, int roll);
 
      @Query("SELECT s FROM Student s WHERE s.program.programCode = :programCode AND s.semester = :semester AND s.roll = :roll")

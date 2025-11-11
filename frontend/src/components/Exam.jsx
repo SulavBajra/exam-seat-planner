@@ -36,6 +36,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 
+
 export default function Exam() {
   const [exams, setExams] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -100,8 +101,9 @@ export default function Exam() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to schedule exam: ${response.status}`);
+       if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create exam");
       }
 
       const createdExam = await response.json();

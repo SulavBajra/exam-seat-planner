@@ -1,7 +1,10 @@
 package com.example.examseatplanner.repository;
 
 import com.example.examseatplanner.model.Program;
+
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,5 +24,13 @@ public interface ProgramRepository extends JpaRepository<Program, Integer> {
 
     List<Program> findAllByOrderByProgramCode();
 
+@Query("""
+    SELECT CASE WHEN COUNT(eps) > 0 THEN TRUE ELSE FALSE END
+    FROM ExamProgramSemester eps
+    JOIN eps.exam e
+    WHERE eps.program.programCode = :programCode
+      AND e.endDate >= CURRENT_DATE
+""")
+boolean hasUpcomingExams(@Param("programCode") Integer programCode);
 
 }

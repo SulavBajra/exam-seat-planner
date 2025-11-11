@@ -3,6 +3,7 @@ package com.example.examseatplanner.service;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.dto.ProgramSemesterDTO;
+import com.example.examseatplanner.exception.NoStudentException;
 import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
@@ -11,7 +12,11 @@ import com.example.examseatplanner.model.Student;
 import com.example.examseatplanner.repository.ExamRepository;
 import com.example.examseatplanner.repository.ProgramRepository;
 import com.example.examseatplanner.repository.RoomRepository;
+import com.example.examseatplanner.repository.SeatingPlanRepository;
 import com.example.examseatplanner.repository.StudentRepository;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -25,15 +30,18 @@ public class ExamService {
     private final ProgramRepository programRepository;
     private final RoomRepository roomRepository;
     private final StudentRepository studentRepository;
+    private final SeatingPlanRepository seatingPlanRepository;
 
     public ExamService(ExamRepository examRepository,
                        ProgramRepository programRepository,
                        RoomRepository roomRepository,
-                       StudentRepository studentRepository) {
+                       StudentRepository studentRepository,
+                       SeatingPlanRepository seatingPlanRepository) {
         this.examRepository = examRepository;
         this.programRepository = programRepository;
         this.roomRepository = roomRepository;
         this.studentRepository = studentRepository;
+        this.seatingPlanRepository = seatingPlanRepository;
     }
 
     public List<ExamResponseDTO> getAllExams() {
@@ -161,6 +169,10 @@ public class ExamService {
             totalStudents += studentRepository.countByProgramCodeAndSemester(ps.programCode(), semesterEnum);
         }
 
+        if (totalStudents == 0) {
+            throw new NoStudentException("No students found");
+        }
+
         int totalCapacity = rooms.stream()
                 .mapToInt(Room::getSeatingCapacity)
                 .sum();
@@ -213,10 +225,12 @@ public class ExamService {
         return ExamMapper.toDto(savedExam);
     }
 
+    @Transactional
     public boolean deleteExam(Integer examId) {
         if (!examRepository.existsById(examId)) {
             return false;
         }
+        seatingPlanRepository.deleteByExam_Id(examId);
         examRepository.deleteById(examId);
         return true;
     }

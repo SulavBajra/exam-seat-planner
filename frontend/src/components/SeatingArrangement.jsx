@@ -173,7 +173,7 @@ export default function SeatingArrangement() {
               acc.push(
                 <div
                   key={idx}
-                  className={`border-2 border-blue-600 p-2.5 w-28 h-10 text-center text-sm ${
+                  className={`border-2 border-gray-800 p-2.5 w-28 h-10 text-center text-sm ${
                     student ? "bg-white" : "bg-gray-100"
                   }`}
                 >
@@ -207,7 +207,7 @@ export default function SeatingArrangement() {
         <h1 className="text-2xl font-bold">Seating Arrangement</h1>
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-green-700"
         >
           Download PDF
         </button>
