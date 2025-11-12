@@ -73,5 +73,22 @@ public class GlobalExceptionHandler {
             return ResponseEntity.badRequest().body(errors);
         }
     
+    @ExceptionHandler(ExceedsRoomCapacityException.class)
+    public ResponseEntity<Map<String,String>> handleExceedsRoomCapacityException(
+        ExceedsRoomCapacityException ex){
+            logger.warn("Students exceeds the capacity of room {}",ex.getMessage());
+            Map<String,String> errors = new HashMap<>();
+            errors.put("message", "There are more students than room capacity");
+            return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(StudentAlreadyHasExamException.class)
+    public ResponseEntity<Map<String,String>> handleStudentAlreadyHasExamException(
+        StudentAlreadyHasExamException ex){
+            logger.warn("Students already has exam {}",ex.getMessage());
+            Map<String,String> errors = new HashMap<>();
+            errors.put("message", "Student already has exam in this date range");
+            return ResponseEntity.badRequest().body(errors);
+    }
 
 }

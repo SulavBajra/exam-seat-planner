@@ -36,6 +36,17 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
      @Query("SELECT e FROM Exam e WHERE (e.startDate <= :endDate AND e.endDate >= :startDate)")
     List<Exam> findOverlappingExams(@Param("startDate") LocalDate startDate, 
                                    @Param("endDate") LocalDate endDate);
+    
+    @Query("SELECT e FROM Exam e JOIN e.programSemesters eps " +
+       "WHERE eps.program.programCode = :programCode " +
+       "AND eps.semester = :semester " +
+       "AND e.startDate <= :endDate AND e.endDate >= :startDate")
+    List<Exam> findExamsForProgramSemesterBetweenDates(
+            @Param("programCode") Integer programCode,
+            @Param("semester") Enum semester,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 
     @Query("SELECT COUNT(e) > 0 FROM Exam e JOIN e.rooms r WHERE r.roomNo = :roomNo AND " +
            "(e.startDate <= :endDate AND e.endDate >= :startDate)")
@@ -46,6 +57,18 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
     @Query("SELECT r.roomNo FROM Exam e JOIN e.rooms r WHERE e.id = :examId")
     List<Integer> findRoomNumbersByExamId(@Param("examId") Integer examId);
     
+
+    @Query("SELECT e FROM Exam e JOIN e.programSemesters eps " +
+           "WHERE eps.program.programCode = :programCode " +
+           "AND eps.semester = :semester " +
+           "AND e.startDate <= :endDate AND e.endDate >= :startDate")
+    List<Exam> findExamsForProgramSemesterBetweenDates(
+            @Param("programCode") String programCode,
+            @Param("semester") Enum semester,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
     @Query("""
         SELECT CASE WHEN COUNT(s) > 0 THEN TRUE ELSE FALSE END
         FROM Student s

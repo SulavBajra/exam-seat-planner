@@ -3,7 +3,9 @@ package com.example.examseatplanner.service;
 import com.example.examseatplanner.dto.ExamRequestDTO;
 import com.example.examseatplanner.dto.ExamResponseDTO;
 import com.example.examseatplanner.dto.ProgramSemesterDTO;
+import com.example.examseatplanner.exception.ExceedsRoomCapacityException;
 import com.example.examseatplanner.exception.NoStudentException;
+import com.example.examseatplanner.exception.StudentAlreadyHasExamException;
 import com.example.examseatplanner.mapper.ExamMapper;
 import com.example.examseatplanner.model.Exam;
 import com.example.examseatplanner.model.Program;
@@ -89,8 +91,23 @@ public class ExamService {
         return studentRepository.countStudentsForExam(examId);
     }
 
+    public boolean hasStudentExamConflict(List<ProgramSemesterDTO> programSemesters, LocalDate startDate, LocalDate endDate) {
+    for (ProgramSemesterDTO ps : programSemesters) {
+        Student.Semester semesterEnum = intToSemester(ps.semester());
+        boolean conflict = examRepository.findExamsForProgramSemesterBetweenDates(
+                ps.programCode(),
+                semesterEnum,
+                startDate,
+                endDate
+        ).size() > 0;
+
+        if (conflict) return true;
+    }
+    return false;
+}
+
+
     public void validateRoomCapacity(ExamRequestDTO request) {
-        // Calculate total students for all program-semester combinations
         int totalStudents = request.programSemesters().stream()
                 .mapToInt(ps -> {
                     Student.Semester semesterEnum = intToSemester(ps.semester());
@@ -102,23 +119,12 @@ public class ExamService {
 
         List<Room> rooms = roomRepository.findAllById(request.roomNumbers());
 
-        if (rooms.size() != request.roomNumbers().size()) {
-            List<Integer> missingRooms = new ArrayList<>(request.roomNumbers());
-            rooms.forEach(r -> missingRooms.remove(r.getRoomNo()));
-            throw new IllegalArgumentException(
-                    "The following rooms don't exist: " + missingRooms
-            );
-        }
 
         int totalRoomCapacity = rooms.stream()
                 .mapToInt(Room::getSeatingCapacity)
                 .sum();
 
-        // Detailed validation
         if (totalRoomCapacity < totalStudents) {
-            // Calculate how much additional capacity is needed
-            int deficit = totalStudents - totalRoomCapacity;
-
             Map<String, Integer> studentCounts = request.programSemesters().stream()
                     .collect(Collectors.toMap(
                             ps -> "Program " + ps.programCode() + " Semester " + ps.semester(),
@@ -128,19 +134,9 @@ public class ExamService {
                                         ps.programCode(), semesterEnum);
                             }
                     ));
-
-            throw new IllegalArgumentException(
-                    String.format(
-                            "Insufficient room capacity. Need %d more seats.%n" +
-                                    "Total students: %d%n" +
-                                    "Total capacity: %d%n" +
-                                    "Breakdown by program-semester: %s",
-                            deficit,
-                            totalStudents,
-                            totalRoomCapacity,
-                            studentCounts
-                    )
-            );
+            throw new ExceedsRoomCapacityException("The number of students is more than the capacity of room"+
+            "Room Capacity: "+totalRoomCapacity+
+            "Student Count: "+studentCounts);
         }
     }
 
@@ -167,6 +163,10 @@ public class ExamService {
             Student.Semester semesterEnum = intToSemester(semesterInt);
 
             totalStudents += studentRepository.countByProgramCodeAndSemester(ps.programCode(), semesterEnum);
+        }
+
+        if (hasStudentExamConflict(dto.programSemesters(),LocalDate.parse(dto.startDate()),LocalDate.parse(dto.endDate()))) {
+            throw new StudentAlreadyHasExamException("One or more students already have an exam scheduled in this date range"+dto.startDate()+dto.endDate());
         }
 
         if (totalStudents == 0) {

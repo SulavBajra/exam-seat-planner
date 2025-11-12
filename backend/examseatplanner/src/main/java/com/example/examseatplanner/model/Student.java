@@ -34,7 +34,6 @@ public class Student {
         this.roll = roll;
     }
 
-    // Getters and setters
 
     public Integer getStudentId() {
         return studentId;
@@ -63,8 +62,6 @@ public class Student {
     public void setSemester(Semester semester) {
         this.semester = semester;
     }
-
-    // equals and hashCode based on studentId
 
     @Override
     public boolean equals(Object o) {
