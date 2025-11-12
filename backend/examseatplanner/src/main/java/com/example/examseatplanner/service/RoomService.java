@@ -55,6 +55,26 @@ public class RoomService {
         roomRepository.deleteById(roomNo);
     }
 
+    public RoomResponseDTO updateRoom(Integer roomNo, RoomRequestDTO dto) {
+            Room existingRoom = roomRepository.findById(roomNo)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found"));
+
+            existingRoom.setNumRow(dto.numRow());
+            existingRoom.setSeatsPerBench(dto.seatsPerBench());
+            existingRoom.setRoomColumn(dto.roomColumn());
+
+            Room updated = roomRepository.save(existingRoom);
+
+            return new RoomResponseDTO(
+                    updated.getRoomNo(),
+                    updated.getSeatingCapacity(),
+                    updated.getNumRow(),
+                    updated.getSeatsPerBench(),
+                    updated.getRoomColumn()
+            );
+    }
+
+
     public List<RoomResponseDTO> getRoomsWithMinCapacity(int minCapacity) {
         List<Room> rooms = roomRepository.findAvailableRoomsWithMinCapacity(minCapacity);
         return RoomMapper.toDTOList(rooms);

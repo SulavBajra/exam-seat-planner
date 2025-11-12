@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +16,24 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function AddRoomForm({ onClose, onRoomAdded }) {
   const [roomNo, setRoomNo] = useState("");
-  const [seatingCapacity, setSeatingCapacity] = useState("");
+  const [numRows, setNumRows] = useState("");
   const [isAdvanced, setIsAdvanced] = useState(false);
   const [numColumns, setNumColumns] = useState("");
   const [seatsPerBench, setSeatsPerBench] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const numRows = seatingCapacity / (numColumns * seatsPerBench);
+
+  // default values for non-advanced mode
+  const defaultColumns = 3;
+  const defaultSeatsPerBench = 2;
+
+  // compute capacity dynamically
+  const seatingCapacity = useMemo(() => {
+    const cols = isAdvanced ? parseInt(numColumns) || 0 : defaultColumns;
+    const seats = isAdvanced ? parseInt(seatsPerBench) || 0 : defaultSeatsPerBench;
+    const rows = parseInt(numRows) || 0;
+    return rows > 0 && cols > 0 && seats > 0 ? rows * cols * seats : 0;
+  }, [numRows, numColumns, seatsPerBench, isAdvanced]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,15 +42,9 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
 
     const newRoom = {
       roomNo: parseInt(roomNo),
-      seatingCapacity: parseInt(seatingCapacity),
-      numRow: isAdvanced
-        ? Math.ceil(
-            parseInt(seatingCapacity) /
-              (parseInt(numColumns) * parseInt(seatsPerBench))
-          )
-        : Math.ceil(parseInt(seatingCapacity) / (3 * 2)),
-      roomColumn: isAdvanced ? parseInt(numColumns) : 3,
-      seatsPerBench: isAdvanced ? parseInt(seatsPerBench) : 2,
+      numRow: parseInt(numRows),
+      roomColumn: isAdvanced ? parseInt(numColumns) : defaultColumns,
+      seatsPerBench: isAdvanced ? parseInt(seatsPerBench) : defaultSeatsPerBench,
     };
 
     try {
@@ -77,17 +82,14 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             Add New Room
           </DialogTitle>
           <DialogDescription className="pt-2">
-            Enter the room details below. The seating capacity should be
-            divisible by the bench configuration for optimal layout.
+            Enter the room details below. Seating capacity will be calculated automatically.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {/* Room Number */}
           <div className="space-y-2">
-            <Label htmlFor="roomNo" className="text-sm font-medium">
-              Room Number *
-            </Label>
+            <Label htmlFor="roomNo">Room Number *</Label>
             <Input
               id="roomNo"
               value={roomNo}
@@ -98,18 +100,16 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             />
           </div>
 
-          {/* Seating Capacity */}
+          {/* Number of Rows */}
           <div className="space-y-2">
-            <Label htmlFor="capacity" className="text-sm font-medium">
-              Seating Capacity *
-            </Label>
+            <Label htmlFor="numRows">Number of Rows *</Label>
             <Input
-              id="capacity"
+              id="numRows"
               type="number"
               min="1"
-              value={seatingCapacity}
-              onChange={(e) => setSeatingCapacity(e.target.value)}
-              placeholder="e.g., 30"
+              value={numRows}
+              onChange={(e) => setNumRows(e.target.value)}
+              placeholder="e.g., 5"
               required
               className="h-11"
             />
@@ -118,17 +118,11 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
           {/* Advanced toggle */}
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
             <div className="flex items-center gap-2">
-              <Label
-                htmlFor="advanced"
-                className="text-sm font-medium cursor-pointer"
-              >
-                Advanced Configuration
-              </Label>
+              <Label htmlFor="advanced">Advanced Configuration</Label>
               <div className="relative group">
                 <Info className="h-4 w-4 text-gray-400" />
                 <div className="absolute hidden group-hover:block bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg">
-                  Customize column and bench layout for specialized room
-                  configurations
+                  Customize columns and bench layout for specific rooms
                 </div>
               </div>
             </div>
@@ -143,9 +137,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="numColumns" className="text-sm font-medium">
-                    Number of Columns
-                  </Label>
+                  <Label htmlFor="numColumns">Number of Columns</Label>
                   <Input
                     id="numColumns"
                     type="number"
@@ -159,12 +151,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="seatsPerBench"
-                    className="text-sm font-medium"
-                  >
-                    Seats per Bench
-                  </Label>
+                  <Label htmlFor="seatsPerBench">Seats per Bench</Label>
                   <Input
                     id="seatsPerBench"
                     type="number"
@@ -176,25 +163,21 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
                     className="h-11"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="rows"
-                    className="text-sm font-medium"
-                  >
-                    Seats per Bench
-                  </Label>
-                  <Input
-                    id="rows"
-                    type="number"
-                    min="1"
-                    value={numRows}
-                    className="h-11"
-                    readonly
-                  />
-                </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Computed Seating Capacity */}
+          <div className="space-y-2">
+            <Label htmlFor="capacity">Calculated Seating Capacity</Label>
+            <Input
+              id="capacity"
+              type="number"
+              value={seatingCapacity}
+              readOnly
+              className="h-11 bg-gray-100"
+            />
+          </div>
 
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
@@ -214,7 +197,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !roomNo || !seatingCapacity}
+              disabled={isSubmitting || !roomNo || !numRows}
               className="h-11 bg-blue-600 hover:bg-blue-700"
             >
               {isSubmitting ? "Saving..." : "Save Room"}

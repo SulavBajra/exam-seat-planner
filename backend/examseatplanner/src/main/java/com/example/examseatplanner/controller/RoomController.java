@@ -40,17 +40,17 @@ public class RoomController {
         return roomService.saveRoom(dto);
     }
 
-    @PutMapping("/{roomNo}")
+   @PutMapping("/{roomNo}")
     public ResponseEntity<RoomResponseDTO> updateRoom(
             @PathVariable Integer roomNo,
-            @Valid @RequestBody RoomRequestDTO dto) { 
-        if (roomService.getRoomById(roomNo).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        dto = new RoomRequestDTO(roomNo, dto.seatingCapacity(), dto.numRow(), dto.seatsPerBench(), dto.roomColumn());
-        RoomResponseDTO updatedRoom = roomService.saveRoom(dto);
-        return ResponseEntity.ok(updatedRoom);
+            @Valid @RequestBody RoomRequestDTO dto) {
+
+        return roomService.getRoomById(roomNo)
+                .map(existing -> ResponseEntity.ok(roomService.updateRoom(roomNo, dto)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+
 
 
     @DeleteMapping("/{roomNo}")

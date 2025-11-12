@@ -9,7 +9,7 @@ export default function SeatingArrangement() {
   const [error, setError] = useState(null);
   const [examData, setExamData] = useState(null);
   const [programData, setProgramData] = useState([]);
-  const fullRef = useRef(null); // 👈 Capture entire layout
+  const fullRef = useRef(null); 
 
   useEffect(() => {
     if (!examId) return;
@@ -130,7 +130,6 @@ export default function SeatingArrangement() {
     ];
   });
 
-  // Render each room grid
   const renderRoom = (room) => {
     const { numRow, roomColumn, seatsPerBench } = room;
     const numCols = roomColumn * seatsPerBench;
