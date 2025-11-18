@@ -61,7 +61,12 @@ export default function Room() {
       return data;
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load room details");
+      toast.error("Failed to load room details",{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
       return null;
     } finally {
       setDetailsLoading(false);
@@ -80,7 +85,12 @@ export default function Room() {
       if (!bookedRes.ok) throw new Error("Failed to check room booking status");
       const isBooked = await bookedRes.json();
       if (isBooked) {
-        toast.error(`Room ${roomNo} is booked and cannot be edited`);
+        toast.error(`Room ${roomNo} is booked and cannot be edited`,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
         return;
       }
 
@@ -88,7 +98,12 @@ export default function Room() {
       if (data) setEditRoomMode(true);
     } catch (err) {
       console.error(err);
-      toast.error(err.message);
+      toast.error(err.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
@@ -101,7 +116,12 @@ export default function Room() {
       setDeleteConfirmation({ isOpen: true, roomNo, isBooked });
     } catch (err) {
       console.error(err);
-      toast.error(err.message);
+      toast.error(err.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 

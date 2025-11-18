@@ -74,7 +74,12 @@ export default function Program() {
       setDetailsOpen(true);
     } catch (error) {
       console.error("Error fetching details:", error);
-      toast.error("Failed to load details");
+      toast.error("Failed to load details",{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
@@ -92,7 +97,12 @@ export default function Program() {
       setIsDialogOpen(false);
       toast.success("Program added successfully");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
@@ -116,7 +126,12 @@ export default function Program() {
       setEditDialogOpen(false);
       fetchPrograms();
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
@@ -134,7 +149,12 @@ export default function Program() {
       setDeleteConfirmation({ isOpen: false, programCode: null });
       toast.success("Program deleted");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 

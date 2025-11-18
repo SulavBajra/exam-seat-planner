@@ -209,7 +209,12 @@ export default function Student() {
       });
 
       toast.success(
-        `${successCount} students added, ${errorCount} failed to upload`
+        `${successCount} students added, ${errorCount} failed to upload`,{
+        style:{
+          border: "1px solid green",
+          color: "green"
+        }
+      }
       );
     } catch (error) {
       console.error("Upload error:", error);
@@ -217,7 +222,12 @@ export default function Student() {
         text: error.message || "Failed to process file",
         type: "error",
       });
-      toast.error(error.message || "Failed to process file");
+      toast.error(error.message || "Failed to process file",{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     } finally {
       setIsUploading(false);
       setUploadProgress(100);

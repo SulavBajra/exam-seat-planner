@@ -22,18 +22,12 @@ export default function SearchSeat() {
   const [selectedSemester, setSelectedSemester] = useState("");
   const [rollNumber, setRoll] = useState("");
   const [examId, setExamId] = useState("");
-  const [seat, setSeat] = useState([]);
+  const [seat, setSeat] = useState(null);
   const [error, setError] = useState("");
 
   const semesters = [
-    "FIRST",
-    "SECOND",
-    "THIRD",
-    "FOURTH",
-    "FIFTH",
-    "SIXTH",
-    "SEVENTH",
-    "EIGHTH",
+    "FIRST", "SECOND", "THIRD", "FOURTH",
+    "FIFTH", "SIXTH", "SEVENTH", "EIGHTH"
   ];
 
   useEffect(() => {
@@ -46,8 +40,8 @@ export default function SearchSeat() {
       const response = await fetch("http://localhost:8081/api/programs");
       if (!response.ok) throw new Error("Error fetching program name");
       setAvailablePrograms(await response.json());
-    } catch (error) {
-      console.error("Cannot fetch program name", error);
+    } catch (err) {
+      console.error(err);
       setError("Failed to load programs");
     } finally {
       setLoading(false);
@@ -66,13 +60,15 @@ export default function SearchSeat() {
     setSearchLoading(true);
 
     try {
-   const response = await fetch(`http://localhost:8081/api/seating/search?examId=${examId}&programCode=${selectedProgram}&semester=${selectedSemester}&roll=${rollNumber}`);
-      if (!response.ok) throw new Error("Student not found");
+      const response = await fetch(
+        `http://localhost:8081/api/seating/search?examId=${examId}&programCode=${selectedProgram}&semester=${selectedSemester}&roll=${rollNumber}`
+      );
+      if (!response.ok) throw new Error("Student seat not found");
       setSeat(await response.json());
-    } catch (error) {
-      console.error("Error searching seat:", error);
-      setError(error.message || "Failed to find seat information");
-      setSeat([]);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to find seat information");
+      setSeat(null);
     } finally {
       setSearchLoading(false);
     }
@@ -100,12 +96,13 @@ export default function SearchSeat() {
             {/* Program */}
             <div className="space-y-2">
               <Label>Program</Label>
-              <Select
-                value={selectedProgram}
-                onValueChange={setSelectedProgram}
-              >
+             <Select value={selectedProgram} onValueChange={setSelectedProgram}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select your program" />
+                  <SelectValue placeholder="Select your program">
+                    {selectedProgram
+                      ? availablePrograms.find(p => p.programCode.toString() === selectedProgram)?.programName
+                      : ""}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -117,10 +114,7 @@ export default function SearchSeat() {
                       </div>
                     ) : (
                       availablePrograms.map((pro) => (
-                        <SelectItem
-                          key={pro.programCode}
-                          value={pro.programCode}
-                        >
+                        <SelectItem key={pro.programCode} value={pro.programCode.toString()}>
                           {pro.programName}
                         </SelectItem>
                       ))
@@ -130,12 +124,10 @@ export default function SearchSeat() {
               </Select>
             </div>
 
+            {/* Semester */}
             <div className="space-y-2">
               <Label>Semester</Label>
-              <Select
-                value={selectedSemester}
-                onValueChange={setSelectedSemester}
-              >
+              <Select value={selectedSemester} onValueChange={setSelectedSemester}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select semester" />
                 </SelectTrigger>
@@ -151,21 +143,25 @@ export default function SearchSeat() {
               </Select>
             </div>
 
+            {/* Roll Number */}
             <div className="space-y-2">
               <Label>Roll Number</Label>
               <Input
                 type="number"
                 placeholder="Enter your roll number"
+                min = "1"
                 value={rollNumber}
                 onChange={(e) => setRoll(e.target.value)}
               />
             </div>
 
+            {/* Exam ID */}
             <div className="space-y-2">
               <Label>Exam ID</Label>
               <Input
                 type="number"
                 placeholder="Enter exam ID"
+                min = "1"
                 value={examId}
                 onChange={(e) => setExamId(e.target.value)}
               />
@@ -195,52 +191,22 @@ export default function SearchSeat() {
                   </>
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={clearForm}
-                disabled={searchLoading}
-              >
+              <Button type="button" variant="outline" onClick={clearForm} disabled={searchLoading}>
                 Clear
               </Button>
             </div>
           </form>
 
           {/* Seat Info */}
-            {seat && seat.seats && (
+          {seat && (
             <div className="mt-6 border-t pt-4 text-sm text-gray-700">
-                <h2 className="font-semibold text-center mb-3">
-                Seat Details Found
-                </h2>
-                <p className="mb-2">
-                <span className="font-medium">Room:</span> {seat.roomNo}
-                </p>
-
-                <div className="grid gap-2">
-                {seat.seats.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex gap-2">
-                    {row.map((seatObj, colIndex) => (
-                        <div
-                        key={colIndex}
-                        className="border border-gray-300 rounded p-2 text-center w-16"
-                        >
-                        <p className="text-xs font-medium">
-                            {seatObj.programCode}
-                        </p>
-                        <p className="text-xs">
-                            Sem: {semesters[seatObj.semester - 1]}
-                        </p>
-                        <p className="text-xs">Roll: {seatObj.roll}</p>
-                        <p className="text-xs">Column{seatObj.row}</p>
-                        <p className="text-xs">Row{seatObj.column}</p>
-                        </div>
-                    ))}
-                    </div>
-                ))}
-                </div>
+              <h2 className="font-semibold text-center mb-3">Seat Details Found</h2>
+              <p><span className="font-medium">You are in Room:</span>{seat.roomNo}</p>
+              <p><span className="font-medium">You are in Room:</span>{seat.rowNumber}</p>
+              <p><span className="font-medium">You are in Room:</span>{seat.columnNumber}</p>
+              <p><span className="font-medium">Exam ID:</span> {seat.examId}</p>
             </div>
-            )}
-
+          )}
         </CardContent>
       </Card>
     </div>

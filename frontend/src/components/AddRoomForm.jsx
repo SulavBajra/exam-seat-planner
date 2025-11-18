@@ -198,7 +198,7 @@ export default function AddRoomForm({ onClose, onRoomAdded }) {
             <Button
               type="submit"
               disabled={isSubmitting || !roomNo || !numRows}
-              className="h-11 bg-blue-600 hover:bg-blue-700"
+              className="h-11 bg-black hover:bg-green-700"
             >
               {isSubmitting ? "Saving..." : "Save Room"}
             </Button>

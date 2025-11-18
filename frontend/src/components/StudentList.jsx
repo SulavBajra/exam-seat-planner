@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { RefreshCw, Download } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
+import { useNavigate } from "react-router-dom";
 
 export default function StudentList() {
   const [students, setStudents] = useState([]);
@@ -57,6 +57,7 @@ export default function StudentList() {
   }, []);
 
   const handleClear = async () => {
+    
     setIsClearing(true);
     try {
       const response = await fetch(`http://localhost:8081/api/students/clear`, {
@@ -65,11 +66,12 @@ export default function StudentList() {
       if (!response.ok) {
         throw new Error(`Failed to clear students: ${response.status}`);
       }
+      navigate("/student");
       toast({
         title: "Success",
         description: "All student data has been cleared",
       });
-      fetchStudents(); // Refresh the list after clearing
+      // fetchStudents(); // Refresh the list after clearing
     } catch (error) {
       console.error("Error clearing Student Data: ", error);
       toast.error(`Error clearing data: ${error.message}`);
@@ -86,7 +88,6 @@ export default function StudentList() {
     }
 
     try {
-      // Prepare the worksheet
       const worksheet = XLSX.utils.json_to_sheet(
         students.map((student) => ({
           "Program Name": student.programName,
@@ -96,11 +97,9 @@ export default function StudentList() {
         }))
       );
 
-      // Create a new workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
 
-      // Generate the Excel file
       XLSX.writeFile(workbook, "students_data.xlsx", { compression: true });
 
       toast.success("Excel file downloaded successfully");

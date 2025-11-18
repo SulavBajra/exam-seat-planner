@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 
 export default function Exam() {
@@ -75,16 +76,34 @@ export default function Exam() {
             console.error(
               `Failed to fetch students for exam ${exam.id}: ${examResponse.status}`
             );
+            toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      })
             studentCounts[exam.id] = 0;
           }
         } catch (error) {
           console.error(`Error fetching students for exam ${exam.id}:`, error);
+          toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
           studentCounts[exam.id] = 0;
         }
       }
       setExamStudents(studentCounts);
     } catch (error) {
       console.error(error);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
       setError(error.message);
     } finally {
       setLoading(false);
@@ -122,6 +141,13 @@ export default function Exam() {
         }
       } catch (seatError) {
         console.error("Error generating seat plan:", seatError);
+        toast.error(seatError.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
+
       }
 
       await fetchExams();
@@ -129,6 +155,12 @@ export default function Exam() {
     } catch (error) {
       console.error(error);
       setError(error.message);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
@@ -150,6 +182,12 @@ export default function Exam() {
     } catch (error) {
       console.error(error);
       setError(error.message);
+      toast.error(error.message,{
+        style:{
+          border: "1px solid red",
+          color: "red"
+        }
+      });
     }
   };
 
