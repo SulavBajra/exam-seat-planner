@@ -1,5 +1,6 @@
 package com.example.examseatplanner.model;
 
+
 import jakarta.persistence.*;
 
 @Entity
@@ -10,38 +11,32 @@ public class SeatingPlan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "exam_id")
-    private Exam exam;
+    @Column(name = "exam_id")
+    private Integer examId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "room_id")
-    private Room room;
-
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "student_id")
-    private Student student;
+    @Column(name = "room_id")
+    private String roomNo;
 
     private Integer rowNumber;
     private Integer columnNumber;
-
+    private Integer seatIndex;
     private String programCode;
     private Integer semester;
     private Integer roll;
 
     public SeatingPlan() {}
 
-    public SeatingPlan(Exam exam, Room room, Student student, 
-                       Integer rowNumber, Integer columnNumber,
-                       String programCode, Integer semester, Integer roll) {
-        this.exam = exam;
-        this.room = room;
-        this.student = student;
+    public SeatingPlan(Integer id, Integer examId, String roomNo, Integer rowNumber, Integer columnNumber,
+            String programCode, Integer semester, Integer roll,Integer seatIndex) {
+        this.id = id;
+        this.examId = examId;
+        this.roomNo = roomNo;
         this.rowNumber = rowNumber;
         this.columnNumber = columnNumber;
         this.programCode = programCode;
         this.semester = semester;
         this.roll = roll;
+        this.seatIndex = seatIndex;
     }
 
     public Integer getId() {
@@ -52,28 +47,20 @@ public class SeatingPlan {
         this.id = id;
     }
 
-    public Exam getExam() {
-        return exam;
+    public Integer getExamId() {
+        return examId;
     }
 
-    public void setExam(Exam exam) {
-        this.exam = exam;
+    public void setExamId(Integer examId) {
+        this.examId = examId;
     }
 
-    public Room getRoom() {
-        return room;
+    public String getRoomNo() {
+        return roomNo;
     }
 
-    public void setRoom(Room room) {
-        this.room = room;
-    }
-
-    public Student getStudent() {
-        return student;
-    }
-
-    public void setStudent(Student student) {
-        this.student = student;
+    public void setRoomNo(String roomNo) {
+        this.roomNo = roomNo;
     }
 
     public Integer getRowNumber() {
@@ -116,16 +103,18 @@ public class SeatingPlan {
         this.roll = roll;
     }
 
-    @Override
-    public String toString() {
-        return "SeatingPlan [id=" + id + ", exam=" + exam + ", room=" + room + ", student=" + student + ", rowNumber="
-                + rowNumber + ", columnNumber=" + columnNumber + ", programCode=" + programCode + ", semester="
-                + semester + ", roll=" + roll + ", getId()=" + getId() + ", getExam()=" + getExam() + ", getRoom()="
-                + getRoom() + ", getStudent()=" + getStudent() + ", getRowNumber()=" + getRowNumber()
-                + ", getColumnNumber()=" + getColumnNumber() + ", getProgramCode()=" + getProgramCode()
-                + ", getSemester()=" + getSemester() + ", getRoll()=" + getRoll() + ", getClass()=" + getClass()
-                + ", hashCode()=" + hashCode() + ", toString()=" + super.toString() + "]";
+    public Integer getSeatIndex(){
+        return seatIndex;
     }
 
-    
+    public void setSeatIndex(Integer seatIndex){
+        this.seatIndex = seatIndex;
+    }
+
+    @Override
+    public String toString() {
+        return "SeatingPlan [id=" + id + ", exam=" + examId + ", room=" + roomNo + ", rowNumber=" + rowNumber
+                + ", columnNumber=" + columnNumber + ", programCode=" + programCode + ", semester=" + semester
+                + ", roll=" + roll + ", seatIndex="+ seatIndex+"]";
+    }
 }

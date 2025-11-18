@@ -17,6 +17,15 @@ public class RoomMapper {
         );
     }
 
+      public static Room toEntity(RoomResponseDTO dto) {
+        return new Room(
+                dto.roomNo(),
+                dto.numRow(),
+                dto.seatsPerBench(),
+                dto.roomColumn()
+        );
+    }
+
     public static RoomResponseDTO toDTO(Room room) {
         return new RoomResponseDTO(
                 room.getRoomNo(),

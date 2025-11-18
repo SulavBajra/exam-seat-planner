@@ -178,7 +178,7 @@ public class ExamService {
                 .sum();
 
         if (totalStudents > totalCapacity) {
-            throw new IllegalArgumentException("Room capacity not enough");
+            throw new ExceedsRoomCapacityException("Room capacity not enough");
         }
 
 
@@ -230,7 +230,7 @@ public class ExamService {
         if (!examRepository.existsById(examId)) {
             return false;
         }
-        seatingPlanRepository.deleteByExam_Id(examId);
+        seatingPlanRepository.deleteByExamId(examId);
         examRepository.deleteById(examId);
         return true;
     }

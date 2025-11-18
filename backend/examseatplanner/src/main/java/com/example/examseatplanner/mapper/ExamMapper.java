@@ -48,8 +48,7 @@ public class ExamMapper {
                 .map(eps -> new ProgramSemesterResponseDTO(
                         eps.getProgram().getProgramCode(),
                         eps.getProgram().getProgramName(),
-                        eps.getSemester().ordinal() + 1,
-                        eps.getSemester().name()
+                        eps.getSemester().ordinal() + 1
                 ))
                 .collect(Collectors.toList());
 

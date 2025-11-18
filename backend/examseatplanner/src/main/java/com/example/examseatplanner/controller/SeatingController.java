@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.examseatplanner.dto.RoomPlanDTO;
 import com.example.examseatplanner.dto.SeatAssignmentDTO;
-import com.example.examseatplanner.mapper.SeatPlanMapper;
-import com.example.examseatplanner.model.SeatingPlan;
 import com.example.examseatplanner.service.SeatPlanService;
 
 @RestController
@@ -25,43 +23,42 @@ public class SeatingController {
     @Autowired
     private SeatPlanService seatPlanService;
 
-    @PostMapping("/generate/{examId}")
-    public ResponseEntity<?> generateAndSavePlan(@PathVariable Integer examId) {
-        List<RoomPlanDTO> plan = seatPlanService.generateAndSaveSeatingPlan(examId);
-        return ResponseEntity.ok(plan);
+   @PostMapping("/generate/{examId}")
+    public ResponseEntity<String> generateAndSavePlan(@PathVariable Integer examId) {
+        try {
+            seatPlanService.generateAndSaveSeatingPlan(examId);
+            return ResponseEntity.ok("Successfully generated seat plan");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error generating plan: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{examId}")
     public ResponseEntity<?> getSavedPlan(@PathVariable Integer examId) {
-        List<SeatingPlan> plan = seatPlanService.getSavedSeatingPlan(examId);
-        return ResponseEntity.ok(plan);
+        try {
+            List<RoomPlanDTO> plan = seatPlanService.getSavedSeatingPlanGroupedByRoom(examId);
+            return ResponseEntity.ok(plan);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                 .body("Plan not found: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search")
-public ResponseEntity<?> searchStudentSeat(
-        @RequestParam Integer examId,
-        @RequestParam String programCode,
-        @RequestParam Integer semester,
-        @RequestParam Integer roll
-) {
-    try {
-        SeatingPlan seat = seatPlanService.searchStudentSeat(examId, programCode, semester, roll);
-        if (seat == null || seat.getRoom() == null) {
-            throw new RuntimeException("Seat or assigned room not found");
+    public ResponseEntity<?> searchStudentSeat(
+            @RequestParam Integer examId,
+            @RequestParam String programCode,
+            @RequestParam Integer semester,
+            @RequestParam Integer roll
+    ) {
+        try {
+            SeatAssignmentDTO seatDTO = seatPlanService.searchStudentSeat(examId, programCode, semester, roll);
+            return ResponseEntity.ok(seatDTO);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(e.getMessage());
         }
-
-        SeatAssignmentDTO seatDTO = SeatPlanMapper.toDTO(seat);
-        RoomPlanDTO roomDTO = new RoomPlanDTO(
-            seat.getRoom().getRoomNo().toString(),
-            List.of(List.of(seatDTO)) 
-        );
-
-        return ResponseEntity.ok(roomDTO);
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
-}
-
-
 }
 

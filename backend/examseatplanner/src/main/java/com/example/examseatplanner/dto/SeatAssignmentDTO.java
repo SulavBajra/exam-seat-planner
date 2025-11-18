@@ -1,63 +1,62 @@
 package com.example.examseatplanner.dto;
 
-public class SeatAssignmentDTO {
+public class SeatAssignmentDTO{
     private String programCode;
-    private int semester;
-    private int roll;
-
-    // optional
-    private int row;
-    private int column;
+    private Integer semester;
+    private Integer roll;
+    private Integer rowNumber;
+    private Integer columnNumber;
+    private String roomNo;
+    private Integer examId;
 
     public SeatAssignmentDTO(){}
 
-    public SeatAssignmentDTO(String programCode, int semester, int roll, int row, int column) {
+    public SeatAssignmentDTO(String programCode, Integer semester, Integer roll, Integer rowNumber,
+            Integer columnNumber, String roomNo) {
         this.programCode = programCode;
         this.semester = semester;
         this.roll = roll;
-        this.row = row;
-        this.column = column;
+        this.rowNumber = rowNumber;
+        this.columnNumber = columnNumber;
+        this.roomNo = roomNo;
     }
 
     public String getProgramCode() {
         return programCode;
     }
-
     public void setProgramCode(String programCode) {
         this.programCode = programCode;
     }
-
-    public int getSemester() {
+    public Integer getSemester() {
         return semester;
     }
-
-    public void setSemester(int semester) {
+    public void setSemester(Integer semester) {
         this.semester = semester;
     }
-
-    public int getRoll() {
+    public Integer getRoll() {
         return roll;
     }
-
-    public void setRoll(int roll) {
+    public void setRoll(Integer roll) {
         this.roll = roll;
     }
-
-    public int getRow() {
-        return row;
+    public Integer getRowNumber() {
+        return rowNumber;
     }
-
-    public void setRow(int row) {
-        this.row = row;
+    public void setRowNumber(Integer rowNumber) {
+        this.rowNumber = rowNumber;
     }
-
-    public int getColumn() {
-        return column;
+    public Integer getColumnNumber() {
+        return columnNumber;
     }
-
-    public void setColumn(int column) {
-        this.column = column;
+    public void setColumnNumber(Integer columnNumber) {
+        this.columnNumber = columnNumber;
     }
-
-    
+    public String getRoomNo() {
+        return roomNo;
+    }
+    public void setRoomNo(String roomNo) {
+        this.roomNo = roomNo;
+    }
+    public Integer getExamId() { return examId; }
+    public void setExamId(Integer examId) { this.examId = examId; }
 }

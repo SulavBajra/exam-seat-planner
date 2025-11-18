@@ -1,2 +1,2 @@
-GET http://localhost:8081/api/seating/1
+POST http://localhost:8081/api/seating/generate/1
 

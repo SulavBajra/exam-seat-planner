@@ -1,28 +1,14 @@
 package com.example.examseatplanner.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.example.examseatplanner.dto.ExamDataDTO;
-import com.example.examseatplanner.dto.ProgramResponseDTO;
-import com.example.examseatplanner.dto.RoomPlanDTO;
-import com.example.examseatplanner.dto.RoomResponseDTO;
-import com.example.examseatplanner.dto.SeatAssignmentDTO;
-import com.example.examseatplanner.dto.StudentDTO;
-import com.example.examseatplanner.model.Exam;
-import com.example.examseatplanner.model.Room;
-import com.example.examseatplanner.model.SeatingPlan;
-import com.example.examseatplanner.model.Student;
-import com.example.examseatplanner.repository.ExamRepository;
-import com.example.examseatplanner.repository.RoomRepository;
-import com.example.examseatplanner.repository.SeatingPlanRepository;
-import com.example.examseatplanner.repository.StudentRepository;
+import com.example.examseatplanner.dto.*;
+import com.example.examseatplanner.mapper.SeatPlanMapper;
+import com.example.examseatplanner.model.*;
+import com.example.examseatplanner.repository.*;
 
 import jakarta.transaction.Transactional;
 
@@ -30,129 +16,156 @@ import jakarta.transaction.Transactional;
 public class SeatPlanService {
 
     private final ExamDataService examDataService;
-    private final ExamRepository examRepository;
-    private final RoomRepository roomRepository;
-    private final StudentRepository studentRepository;
     private final SeatingPlanRepository seatingPlanRepository;
-    private final StudentService studentService;
 
-    public SeatPlanService(ExamDataService examDataService,
-    ExamRepository examRepository,
-    RoomRepository roomRepository,
-    StudentRepository studentRepository,
-    SeatingPlanRepository seatingPlanRepository,
-    StudentService studentService){
+    public SeatPlanService(
+            ExamDataService examDataService,
+            SeatingPlanRepository seatingPlanRepository){
         this.examDataService = examDataService;
-        this.examRepository = examRepository;
-        this.roomRepository = roomRepository;
-        this.studentRepository = studentRepository;
         this.seatingPlanRepository = seatingPlanRepository;
-        this.studentService = studentService;
     }
 
-    @Transactional
-    public List<RoomPlanDTO> generateAndSaveSeatingPlan(Integer examId) {
-        ExamDataDTO examData = examDataService.getExamData(examId);
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
 
-        // Clear previous plan if exists
-        seatingPlanRepository.deleteById(examId);
+   @Transactional
+    public void generateAndSaveSeatingPlan(Integer examId) {
 
-        List<ProgramResponseDTO> programs = examData.programs();
-        List<RoomResponseDTO> rooms = examData.rooms();
-        List<StudentDTO> students = examData.students();
+        ExamDataDTO examDataDTO = examDataService.getExamData(examId);
 
-        // Group students by program
-        Map<String, Queue<StudentDTO>> programQueues = new HashMap<>();
-        for (ProgramResponseDTO p : programs) {
-            List<StudentDTO> group = students.stream()
-                    .filter(s -> s.programCode().equals(p.programCode()))
-                    .toList();
-            programQueues.put(p.programCode().toString(), new LinkedList<>(group));
+        List<ProgramResponseDTO> programList = examDataDTO.programs();
+        List<StudentDTO> studentList = examDataDTO.students();
+        List<RoomResponseDTO> roomList = examDataDTO.rooms();
+
+        Map<Integer, Queue<StudentDTO>> programQueuesOriginal = new LinkedHashMap<>();
+        Map<Integer, Queue<StudentDTO>> programQueues = programQueuesOriginal.entrySet()
+                                                .stream()
+                                                .collect(Collectors.toMap(
+                                                    Map.Entry::getKey,
+                                                    e -> new LinkedList<>(e.getValue()),
+                                                    (a, b) -> a,
+                                                    LinkedHashMap::new
+                                                ));
+
+
+        for (ProgramResponseDTO p : programList) {
+            Queue<StudentDTO> q = new LinkedList<>(
+                    studentList.stream()
+                            .filter(s -> s.programCode().equals(p.programCode()))
+                            .toList()
+            );
+            programQueues.put(p.programCode(), q);
         }
+
+        List<SeatingPlan> saveList = new ArrayList<>();
+
+        for (RoomResponseDTO room : roomList) {
+            List<Queue<StudentDTO>> remainingPrograms = new ArrayList<>(programQueues.values());
+            int rows = room.numRow();
+            int cols = room.roomColumn();
+            int seatsPerBench = room.seatsPerBench();
+            String roomNo = room.roomNo().toString();
+
+            @SuppressWarnings("unchecked")
+            Queue<StudentDTO>[] laneProgram = new Queue[seatsPerBench];
+
+            for (int lane = 0; lane < seatsPerBench; lane++) {
+                if (!remainingPrograms.isEmpty()) {
+                    laneProgram[lane] = remainingPrograms.remove(0);
+                } else {
+                    laneProgram[lane] = new LinkedList<>();
+                }
+            }
+
+            for (int col = 0; col < cols; col++) {
+                for (int row = 0; row < rows; row++) {
+
+                    for (int lane = 0; lane < seatsPerBench; lane++) {
+
+                        Queue<StudentDTO> currentQueue = laneProgram[lane];
+
+                        if (currentQueue.isEmpty()) {
+                            if (!remainingPrograms.isEmpty()) {
+                                currentQueue = remainingPrograms.remove(0);
+                                laneProgram[lane] = currentQueue;
+                            } else {
+                                continue; 
+                            }
+                        }
+
+                        StudentDTO student = currentQueue.poll();
+                        if (student == null) continue;
+                            System.out.println(
+                            "Assign => examId=" + examId +
+                            " room=" + roomNo +
+                            " row=" + row +
+                            " col=" + col +
+                            " lane=" + lane +
+                            " program=" + student.programCode() +
+                            " roll=" + student.roll()
+                        );
+
+                        SeatingPlan seat = new SeatingPlan(
+                                null,
+                                examId,
+                                roomNo,
+                                row+1,
+                                col+1,
+                                student.programCode().toString(),
+                                student.semester(),
+                                student.roll(),
+                                lane+1
+                        );
+
+                        saveList.add(seat);
+                    }
+                }
+            }
+        }
+        seatingPlanRepository.saveAll(saveList);
+    }
+
+
+
+    public List<RoomPlanDTO> getSavedSeatingPlanGroupedByRoom(Integer examId) {
+        List<SeatingPlan> plans = seatingPlanRepository.findByExamId(examId);
+
+        Map<String, List<SeatingPlan>> grouped = plans.stream()
+                .collect(Collectors.groupingBy(sp -> sp.getRoomNo()));
 
         List<RoomPlanDTO> roomPlans = new ArrayList<>();
 
-        for (RoomResponseDTO roomDTO : rooms) {
-            Room room = roomRepository.findByRoomNo(roomDTO.roomNo())
-                    .orElseThrow(() -> new RuntimeException("Room not found: " + roomDTO.roomNo()));
+        for (Map.Entry<String, List<SeatingPlan>> entry : grouped.entrySet()) {
+            String roomNo = entry.getKey();
+            List<SeatingPlan> roomSeats = entry.getValue();
 
-            int numCols = roomDTO.roomColumn() * roomDTO.seatsPerBench();
-            int numRows = roomDTO.numRow();
+            int maxRow = roomSeats.stream().mapToInt(SeatingPlan::getRowNumber).max().orElse(0);
+            int maxCol = roomSeats.stream().mapToInt(SeatingPlan::getColumnNumber).max().orElse(0);
 
             List<List<SeatAssignmentDTO>> grid = new ArrayList<>();
-
-            for (int row = 0; row < numRows; row++) {
-                List<SeatAssignmentDTO> rowSeats = new ArrayList<>();
-
-                for (int col = 0; col < numCols; col++) {
-                    StudentDTO chosen = null;
-
-                    for (ProgramResponseDTO program : programs) {
-                        Queue<StudentDTO> queue = programQueues.get(program.programCode().toString());
-                        if (queue == null || queue.isEmpty()) continue;
-
-                        SeatAssignmentDTO leftNeighbor = (col > 0 && !rowSeats.isEmpty())
-                                ? rowSeats.get(col - 1)
-                                : null;
-                        if (leftNeighbor == null ||
-                            !leftNeighbor.getProgramCode().equals(program.programCode().toString())) {
-                            chosen = queue.poll();
-                            break;
-                        }
-                    }
-
-                    SeatAssignmentDTO seat = null;
-                    if (chosen != null) {
-                        seat = new SeatAssignmentDTO(
-                                chosen.programCode().toString(),
-                                chosen.semester(),
-                                chosen.roll(),
-                                row + 1,
-                                col + 1
-                        );
-
-                        Student.Semester semesterEnum = studentService.toSemesterEnum(chosen.semester());
-
-                        // Fetch the actual student entity (optional but preferred)
-                        Student studentEntity = studentRepository
-                                .findByProgramCodeAndSemesterAndRoll(
-                                        chosen.programCode(), 
-                                        semesterEnum, 
-                                        chosen.roll())
-                                .orElse(null);
-
-                        seatingPlanRepository.save(new SeatingPlan(
-                                exam, room, studentEntity,
-                                Integer.valueOf(row + 1), 
-                                Integer.valueOf(col + 1),
-                                chosen.programCode().toString(), 
-                                Integer.valueOf(chosen.semester()),
-                                Integer.valueOf(chosen.roll())
-                        ));
-                    }
-
-                    rowSeats.add(seat);
-                }
-                grid.add(rowSeats);
+            for (int r = 0; r < maxRow; r++) {
+                grid.add(new ArrayList<>(Collections.nCopies(maxCol, null)));
             }
 
-            roomPlans.add(new RoomPlanDTO(roomDTO.roomNo().toString(), grid));
+            for (SeatingPlan sp : roomSeats) {
+                grid.get(sp.getRowNumber() - 1).set(sp.getColumnNumber() - 1, SeatPlanMapper.toDTO(sp));
+            }
+
+            roomPlans.add(new RoomPlanDTO(roomNo, grid));
         }
 
         return roomPlans;
     }
 
-    public List<SeatingPlan> getSavedSeatingPlan(Integer examId){
+
+    public List<SeatingPlan> getSavedSeatingPlan(Integer examId) {
         return seatingPlanRepository.findByExamId(examId);
     }
 
-    public SeatingPlan searchStudentSeat(Integer examId, String programCode, Integer semester, Integer roll) {
-        return seatingPlanRepository.findByExamIdAndProgramCodeAndSemesterAndRoll(
-                examId, programCode, semester, roll
-        ).orElseThrow(() -> new RuntimeException("Student seat not found"));
+   public SeatAssignmentDTO searchStudentSeat(Integer examId, String programCode, Integer semester, Integer roll) {
+        SeatingPlan seat = seatingPlanRepository
+                .findByExamIdAndProgramCodeAndSemesterAndRoll(examId, programCode, semester, roll)
+                .orElseThrow(() -> new RuntimeException("Student seat not found"));
+
+        return SeatPlanMapper.toDTO(seat); 
     }
 
 }
-
