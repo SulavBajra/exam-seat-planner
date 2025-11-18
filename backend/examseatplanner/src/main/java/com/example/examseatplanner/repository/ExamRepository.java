@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ExamRepository extends JpaRepository<Exam, Integer> {
@@ -41,6 +42,7 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
        "WHERE eps.program.programCode = :programCode " +
        "AND eps.semester = :semester " +
        "AND e.startDate <= :endDate AND e.endDate >= :startDate")
+
     List<Exam> findExamsForProgramSemesterBetweenDates(
             @Param("programCode") Integer programCode,
             @Param("semester") Enum semester,
@@ -57,6 +59,7 @@ public interface ExamRepository extends JpaRepository<Exam, Integer> {
     @Query("SELECT r.roomNo FROM Exam e JOIN e.rooms r WHERE e.id = :examId")
     List<Integer> findRoomNumbersByExamId(@Param("examId") Integer examId);
     
+    Optional<Exam> findExamIdByStartDateAndEndDate(LocalDate startDate, LocalDate endDate);
 
     @Query("SELECT e FROM Exam e JOIN e.programSemesters eps " +
            "WHERE eps.program.programCode = :programCode " +

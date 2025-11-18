@@ -1,5 +1,6 @@
 package com.example.examseatplanner.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,13 +48,14 @@ public class SeatingController {
 
     @GetMapping("/search")
     public ResponseEntity<?> searchStudentSeat(
-            @RequestParam Integer examId,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
             @RequestParam String programCode,
             @RequestParam Integer semester,
             @RequestParam Integer roll
     ) {
         try {
-            SeatAssignmentDTO seatDTO = seatPlanService.searchStudentSeat(examId, programCode, semester, roll);
+            SeatAssignmentDTO seatDTO = seatPlanService.searchStudentSeat(startDate, endDate, programCode, semester, roll);
             return ResponseEntity.ok(seatDTO);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

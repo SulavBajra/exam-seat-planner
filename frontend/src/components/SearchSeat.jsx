@@ -21,9 +21,13 @@ export default function SearchSeat() {
   const [selectedProgram, setSelectedProgram] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [rollNumber, setRoll] = useState("");
-  const [examId, setExamId] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [seat, setSeat] = useState(null);
   const [error, setError] = useState("");
+
+  const getTodayDate = () => new Date().toISOString().split("T")[0];
+
 
   const semesters = [
     "FIRST", "SECOND", "THIRD", "FOURTH",
@@ -51,7 +55,7 @@ export default function SearchSeat() {
   async function handleSearch(e) {
     e.preventDefault();
 
-    if (!selectedProgram || !selectedSemester || !rollNumber || !examId) {
+    if (!selectedProgram || !selectedSemester || !rollNumber  || !startDate || !endDate) {
       setError("Please fill out all fields");
       return;
     }
@@ -61,7 +65,7 @@ export default function SearchSeat() {
 
     try {
       const response = await fetch(
-        `http://localhost:8081/api/seating/search?examId=${examId}&programCode=${selectedProgram}&semester=${selectedSemester}&roll=${rollNumber}`
+        `http://localhost:8081/api/seating/search?startDate=${startDate}&endDate=${endDate}&programCode=${selectedProgram}&semester=${selectedSemester}&roll=${rollNumber}`
       );
       if (!response.ok) throw new Error("Student seat not found");
       setSeat(await response.json());
@@ -78,7 +82,8 @@ export default function SearchSeat() {
     setSelectedProgram("");
     setSelectedSemester("");
     setRoll("");
-    setExamId("");
+    setStartDate("");
+    setEndDate("");
     setSeat(null);
     setError("");
   };
@@ -156,16 +161,42 @@ export default function SearchSeat() {
             </div>
 
             {/* Exam ID */}
-            <div className="space-y-2">
-              <Label>Exam ID</Label>
-              <Input
-                type="number"
-                placeholder="Enter exam ID"
-                min = "1"
-                value={examId}
-                onChange={(e) => setExamId(e.target.value)}
-              />
-            </div>
+            <div className="flex flex-col">
+             <Label htmlFor="startDate" className="font-medium text-sm">
+              Start Date
+            </Label>
+            <Input
+              type="date"
+              id="startDate"
+              name="startDate"
+              value={startDate}
+              onChange={(e) =>
+                setStartDate(e.target.value )
+              }
+              required
+              min={getTodayDate()}
+              className="mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+          </div>
+
+          {/* End Date */}
+          <div className="flex flex-col">
+            <Label htmlFor="endDate" className="font-medium text-sm">
+              End Date
+            </Label>
+            <Input
+              type="date"
+              id="endDate"
+              name="endDate"
+              value={endDate}
+              onChange={(e) =>
+                setEndDate(e.target.value)
+              }
+              required
+              min={startDate || getTodayDate()}
+              className="mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+          </div>
 
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
@@ -201,10 +232,9 @@ export default function SearchSeat() {
           {seat && (
             <div className="mt-6 border-t pt-4 text-sm text-gray-700">
               <h2 className="font-semibold text-center mb-3">Seat Details Found</h2>
-              <p><span className="font-medium">You are in Room:</span>{seat.roomNo}</p>
-              <p><span className="font-medium">You are in Room:</span>{seat.rowNumber}</p>
-              <p><span className="font-medium">You are in Room:</span>{seat.columnNumber}</p>
-              <p><span className="font-medium">Exam ID:</span> {seat.examId}</p>
+              <p><span className="font-medium">Student is in Room:</span>{seat.roomNo}</p>
+              <p><span className="font-medium">Student is in Row number</span>{seat.rowNumber}</p>
+              <p><span className="font-medium">Student is in Column number</span>{seat.columnNumber}</p>
             </div>
           )}
         </CardContent>

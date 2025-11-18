@@ -28,7 +28,7 @@ public class Exam {
 
     @Column(name = "end_date")
     @NotNull(message = "End date cannot be empty")
-   private LocalDate endDate; 
+    private LocalDate endDate; 
 
     @ManyToMany
     @JoinTable(

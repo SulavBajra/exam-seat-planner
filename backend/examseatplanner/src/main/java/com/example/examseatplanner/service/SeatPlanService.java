@@ -1,5 +1,6 @@
 package com.example.examseatplanner.service;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,12 +18,15 @@ public class SeatPlanService {
 
     private final ExamDataService examDataService;
     private final SeatingPlanRepository seatingPlanRepository;
+    private final ExamRepository examRepository;
 
     public SeatPlanService(
             ExamDataService examDataService,
-            SeatingPlanRepository seatingPlanRepository){
+            SeatingPlanRepository seatingPlanRepository,
+            ExamRepository examRepository){
         this.examDataService = examDataService;
         this.seatingPlanRepository = seatingPlanRepository;
+        this.examRepository = examRepository;
     }
 
 
@@ -160,9 +164,11 @@ public class SeatPlanService {
         return seatingPlanRepository.findByExamId(examId);
     }
 
-   public SeatAssignmentDTO searchStudentSeat(Integer examId, String programCode, Integer semester, Integer roll) {
+   public SeatAssignmentDTO searchStudentSeat(LocalDate startDate,LocalDate endDate, String programCode, Integer semester, Integer roll) {
+        Exam exam = examRepository.findExamIdByStartDateAndEndDate(startDate, endDate)
+                                .orElseThrow(()->new RuntimeException("Exam in that date not found"));
         SeatingPlan seat = seatingPlanRepository
-                .findByExamIdAndProgramCodeAndSemesterAndRoll(examId, programCode, semester, roll)
+                .findByExamIdAndProgramCodeAndSemesterAndRoll(exam.getId(), programCode, semester, roll)
                 .orElseThrow(() -> new RuntimeException("Student seat not found"));
 
         return SeatPlanMapper.toDTO(seat); 
