@@ -7,11 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.example.examseatplanner.dto.*;
+import com.example.examseatplanner.exception.ExceedsRoomCapacityException;
 import com.example.examseatplanner.mapper.SeatPlanMapper;
 import com.example.examseatplanner.model.*;
 import com.example.examseatplanner.repository.*;
 
-import jakarta.transaction.Transactional;
 
 @Service
 public class SeatPlanService {
@@ -30,7 +30,6 @@ public class SeatPlanService {
     }
 
 
-   @Transactional
     public void generateAndSaveSeatingPlan(Integer examId) {
 
         ExamDataDTO examDataDTO = examDataService.getExamData(examId);
@@ -39,17 +38,15 @@ public class SeatPlanService {
         List<StudentDTO> studentList = examDataDTO.students();
         List<RoomResponseDTO> roomList = examDataDTO.rooms();
 
-        Map<Integer, Queue<StudentDTO>> programQueuesOriginal = new LinkedHashMap<>();
-        Map<Integer, Queue<StudentDTO>> programQueues = programQueuesOriginal.entrySet()
-                                                .stream()
-                                                .collect(Collectors.toMap(
-                                                    Map.Entry::getKey,
-                                                    e -> new LinkedList<>(e.getValue()),
-                                                    (a, b) -> a,
-                                                    LinkedHashMap::new
-                                                ));
-
-
+        Map<Integer, Queue<StudentDTO>> programQueues = new LinkedHashMap<>();
+        // Map<Integer, Queue<StudentDTO>> programQueues = programQueuesOriginal.entrySet()
+        //                                         .stream()
+        //                                         .collect(Collectors.toMap(
+        //                                             Map.Entry::getKey,
+        //                                             e -> npew LinkedList<>(e.getValue()),
+        //                                             (a, b) -> a,
+        //                                             LinkedHashMap::new
+        //                                         ));
         for (ProgramResponseDTO p : programList) {
             Queue<StudentDTO> q = new LinkedList<>(
                     studentList.stream()
@@ -68,28 +65,28 @@ public class SeatPlanService {
             int seatsPerBench = room.seatsPerBench();
             String roomNo = room.roomNo().toString();
 
-            @SuppressWarnings("unchecked")
-            Queue<StudentDTO>[] laneProgram = new Queue[seatsPerBench];
+            Queue<StudentDTO>[] seatProgram = new Queue[seatsPerBench];
 
-            for (int lane = 0; lane < seatsPerBench; lane++) {
+            for (int seat = 0; seat < seatsPerBench; seat++) {
                 if (!remainingPrograms.isEmpty()) {
-                    laneProgram[lane] = remainingPrograms.remove(0);
+                    seatProgram[seat] = remainingPrograms.remove(0);
                 } else {
-                    laneProgram[lane] = new LinkedList<>();
+                    seatProgram[seat] = new LinkedList<>();
                 }
             }
 
+            
             for (int col = 0; col < cols; col++) {
                 for (int row = 0; row < rows; row++) {
 
-                    for (int lane = 0; lane < seatsPerBench; lane++) {
+                    for (int seat = 0; seat < seatsPerBench; seat++) {
 
-                        Queue<StudentDTO> currentQueue = laneProgram[lane];
+                        Queue<StudentDTO> currentQueue = seatProgram[seat];
 
                         if (currentQueue.isEmpty()) {
                             if (!remainingPrograms.isEmpty()) {
                                 currentQueue = remainingPrograms.remove(0);
-                                laneProgram[lane] = currentQueue;
+                                seatProgram[seat] = currentQueue;
                             } else {
                                 continue; 
                             }
@@ -97,17 +94,8 @@ public class SeatPlanService {
 
                         StudentDTO student = currentQueue.poll();
                         if (student == null) continue;
-                            System.out.println(
-                            "Assign => examId=" + examId +
-                            " room=" + roomNo +
-                            " row=" + row +
-                            " col=" + col +
-                            " lane=" + lane +
-                            " program=" + student.programCode() +
-                            " roll=" + student.roll()
-                        );
-
-                        SeatingPlan seat = new SeatingPlan(
+                            
+                        SeatingPlan seatingPlan = new SeatingPlan(
                                 null,
                                 examId,
                                 roomNo,
@@ -116,18 +104,16 @@ public class SeatPlanService {
                                 student.programCode().toString(),
                                 student.semester(),
                                 student.roll(),
-                                lane+1
+                                seat+1
                         );
 
-                        saveList.add(seat);
+                        saveList.add(seatingPlan);
                     }
                 }
             }
         }
         seatingPlanRepository.saveAll(saveList);
     }
-
-
 
     public List<RoomPlanDTO> getSavedSeatingPlanGroupedByRoom(Integer examId) {
         List<SeatingPlan> plans = seatingPlanRepository.findByExamId(examId);

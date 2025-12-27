@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+
 @Service
 public class StudentService {
 
@@ -115,7 +116,8 @@ public class StudentService {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // Skip header
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                //skipping the header of the excel file eg: Roll, StudentId
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
@@ -139,7 +141,7 @@ public class StudentService {
 
                 } catch (Exception e) {
                     System.err.printf("Error importing row %d: %s%n", i + 1, e.getMessage());
-                    // Decide whether to continue or abort import on error
+                    throw new RuntimeException(e.getMessage());
                 }
             }
         }

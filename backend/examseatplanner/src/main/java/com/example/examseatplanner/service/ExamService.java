@@ -106,6 +106,17 @@ public class ExamService {
     return false;
 }
 
+    private int calculateEffectiveCapacity(Room room, int programCount) {
+        int rows = room.getNumRow();
+        int cols = room.getRoomColumn();
+        int seatsPerBench = room.getSeatsPerBench(); 
+
+        if (programCount == 1) {
+            throw new ExceedsRoomCapacityException("The number of students is more than the capacity of room"); 
+        }
+            return rows * cols * seatsPerBench;   
+    }
+
 
     public void validateRoomCapacity(ExamRequestDTO request) {
         int totalStudents = request.programSemesters().stream()
@@ -116,7 +127,7 @@ public class ExamService {
                             semesterEnum);
                 })
                 .sum();
-
+        int programCount = request.programSemesters().size();
         List<Room> rooms = roomRepository.findAllById(request.roomNumbers());
 
 
@@ -124,7 +135,11 @@ public class ExamService {
                 .mapToInt(Room::getSeatingCapacity)
                 .sum();
 
-        if (totalRoomCapacity < totalStudents) {
+        int totalEffectiveCapacity = rooms.stream()
+            .mapToInt(r -> calculateEffectiveCapacity(r, programCount))
+            .sum();
+        
+        if (totalEffectiveCapacity < totalStudents) {
             Map<String, Integer> studentCounts = request.programSemesters().stream()
                     .collect(Collectors.toMap(
                             ps -> "Program " + ps.programCode() + " Semester " + ps.semester(),
